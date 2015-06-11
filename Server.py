@@ -2,9 +2,12 @@
 ########changelog########
 #########################
 #06/09/15
-#0.0: wrote some code:
-#can successfully send a file from RAT client to server to chroma client,
-#do something, and send it back to the server then RAT.
+#0.0: wrote some code
+#06/10/15
+#0.0001: cleaned stuff up, condensed common operations into
+#functions. 
+#0.0002 rewrote server to handle RAT clients as router type (asynchronous)
+#
 import sys
 import zmq
 import time
@@ -12,13 +15,15 @@ import threading
 #import protobuf (not yet...let's make it do stuff first!)
 #import numpy as np (not yet)
 
-context = zmq.Context()
+context = zmq.Context().instance()
 #frontend = context.socket(zmq.ROUTER)
 #backend = context.socket(zmq.DEALER)
+
+#clients connect here
 port = "5555"
-socket = context.socket(zmq.REP)
+socket = context.socket(zmq.ROUTER)
 socket.bind( "tcp://*:%s"%(port))
-#RAT clients connect here
+
 #frontend.bind( "tcp://*:%s" % (port) )
 #backend.bind( "tcp://*:5556" )
 
@@ -26,24 +31,71 @@ socket.bind( "tcp://*:%s"%(port))
 
 #stuff gets sent to chroma here
 publish_port = "5556"
-pub_socket = context.socket(zmq.REQ) #can this be pub? needs to send and receive. receive on 5555? 
+pub_socket = context.socket(zmq.REQ) 
 pub_socket.bind( "tcp://*:%s" % (publish_port) )
 
+def serverWait():
+    return True
+    #define this function to send a "wait"
+    #signal to the respective clients?
+    #pass in (a) target client(s) to issue wait loop to?
+def getFromRat(address):
+    socket.send_multipart([
+        address,
+        b'',
+        b'send',
+    ])
+    message = socket.recv_multipart() 
+    print message
+    return message[2]
+def sendToChroma(data):
+    print "sending to chroma\n"
+    pub_socket.send(data)
+    #maybe bad idea to have send use this structure
+    #define send and receive functions to return true
+    #if successful?
+    #check for send/receive state at beginning of send/receive
+    #functions ??
+def getFromChroma():
+        newData = pub_socket.recv()
+        print "New data: ",newData
+        return newData
+def sendToRat(address,data):
+    print "sending to RAT\n"
+    socket.send_multipart([
+        address,
+        b'',
+        data,
+    ])
+    #socket.recv()
+    #break up send and receive into separate functions? 
+    #i.e. def recvSignal to make structure more modular
+def sendRatSignal(address,somestring):
+    socket.send_multipart([
+        address,
+        b'',
+        somestring,
+    ])
+    return True
+def sendChromaSignal(somestring):
+    pub_socket.send(somestring)
 
 #talk to RAT clients, pull information about jobs
 def Manager():
     print "Manager opened at port %s"%(port)
     while True:
         #wait for RAT client signal
-        signal = socket.recv()
+        message = socket.recv_multipart()
+        #print address
+        print message
         print "Signal received from client"
         #send a signal to the client
-        socket.send(b"test")
-        time.sleep(1)
-
-        #something goes here to make sure that the client 
-        #received the signal and is ready to send a job and
-        #some geometry
+        socket.send_multipart([
+        message[0],
+        b'',
+        b'test',
+        ])
+        time.sleep(0.25)
         
         #receive geometry from client
         #############################
@@ -51,45 +103,40 @@ def Manager():
         
         #receive job from client (make sure manager
         #differentiates between job and geometry)
-        #get a signal that the client is ready to send job info (use some identifier)
-        jobSignal = socket.recv()
-        if jobSignal is not None:
-            socket.send(b"send the ID")
-            time.sleep(1)
-            testID = socket.recv()
-            socket.send(b"send the info")
-            time.sleep(1)
-            testInfo = socket.recv()
-            print testID,"  ", testInfo
-            print "sending to chroma..\n"
-            
-            pub_socket.send(testID)
-            pub_socket.recv()
-            pub_socket.send(testInfo)
-            time.sleep(3)
-            """#client ready to send job, take its messages and make a job for chroma
-            ID = socket.recv()
-            info = socket.recv()
-            someJob = Job(ID, info)
-            
-            npJobtype = np.dtype(Job(-1,'null'))
-            npJob =""" 
+        #get a signal that the client is ready to send 
+        #job info (use some identifier)
+        
+        #ready to start pulling data
+        jobSignal = socket.recv_multipart()
+        print jobSignal
+        if jobSignal[2] == 'a':
+            testID = getFromRat(jobSignal[0])
+            testInfo = getFromRat(jobSignal[0])
+            print "Got data: ",testID,"  ", testInfo
         else:
-            print "client not ready to send job"
-        #get data back from chroma
+            print "not ready"
+        #ready signal for chroma
+        sendChromaSignal("go")
         pub_socket.recv()
-        pub_socket.send(b"go")
-        newData1 = pub_socket.recv()
-        print newData1
-        pub_socket.send(b"go")
-        newData2 = pub_socket.recv()
-        print newData2
-        #send it back to RAT
-        socket.send(b"DATA")
-        socket.recv()
-        socket.send(newData1)
-        socket.recv()
-        socket.send(newData2)
+        #send data to chroma
+        sendToChroma(testID)
+        pub_socket.recv()
+        sendToChroma(testInfo)
+        pub_socket.recv()
+        #ready to receive "processed" data
+        sendChromaSignal("go")
+        newData1 = getFromChroma()
+        sendChromaSignal("go")
+        newData2 = getFromChroma()
+        #signal back to rat
+        sendRatSignal(jobSignal[0],"DATA")
+        #send the new data
+        if socket.recv_multipart()[2] == "go":
+            sendToRat(jobSignal[0],newData1)
+        if socket.recv_multipart()[2] == "go":
+            sendToRat(jobSignal[0],newData2)
+        
+       
 
 class Job:
     def __init__(self, jobID, jobInfo):
@@ -98,6 +145,21 @@ class Job:
         #do jobs share common class data?
         self.jobID = jobID
         self.jobInfo = jobInfo
-Manager()
+def main():
+    try:
+        Manager()
+    except (KeyboardInterrupt, SystemExit):
+        print "\nReceived keyboard interrupt, exiting\n"
+        exit(1)
+        
 #class Event:
     #magic goes here
+
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+    
