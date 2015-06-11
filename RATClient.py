@@ -25,7 +25,10 @@ def RAT_Thread(context=None):
     set_id(RATclient)
     RATclient.connect("tcp://localhost:5555")
     if Signal(RATclient):
-        SendJob(RATclient)
+        RATclient.recv()
+        SendJob(RATclient,'some int')
+        RATclient.recv()
+        SendJob(RATclient,'some other data')
     else:
         print "couldn't connect"
         exit(1)
@@ -40,12 +43,9 @@ def Signal(socket):
         socket.send(b"a")
         return True
         
-def SendJob(socket):
-    #identifier
-    print socket.recv()
-    socket.send(b"some int")
-    print socket.recv()
-    socket.send(b"test")
+def SendJob(socket,data):
+    print "sending"
+    socket.send(data)
 # later on probably want to use multipart messages and something
 #like: if is_more: receive info, if signal == something sendJob  
 def ReceiveInfo(socket):
