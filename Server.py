@@ -40,11 +40,6 @@ def serverWait():
     #signal to the respective clients?
     #pass in (a) target client(s) to issue wait loop to?
 def getFromRat(address):
-    socket.send_multipart([
-        address,
-        b'',
-        b'send',
-    ])
     message = socket.recv_multipart() 
     print message
     return message[2]
@@ -67,18 +62,7 @@ def sendToRat(address,data):
         b'',
         data,
     ])
-    #socket.recv()
-    #break up send and receive into separate functions? 
-    #i.e. def recvSignal to make structure more modular
-def sendRatSignal(address,somestring):
-    socket.send_multipart([
-        address,
-        b'',
-        somestring,
-    ])
-    return True
-def sendChromaSignal(somestring):
-    pub_socket.send(somestring)
+    #want to check for failure here ?? 
 
 #talk to RAT clients, pull information about jobs
 def Manager():
@@ -90,11 +74,7 @@ def Manager():
         print message
         print "Signal received from client"
         #send a signal to the client
-        socket.send_multipart([
-        message[0],
-        b'',
-        b'test',
-        ])
+        sendToRat(message[0],'test')
         time.sleep(0.25)
         
         #receive geometry from client
@@ -110,13 +90,15 @@ def Manager():
         jobSignal = socket.recv_multipart()
         print jobSignal
         if jobSignal[2] == 'a':
+            sendToRat(jobSignal[0],'send')
             testID = getFromRat(jobSignal[0])
+            sendToRat(jobSignal[0],'send')
             testInfo = getFromRat(jobSignal[0])
             print "Got data: ",testID,"  ", testInfo
         else:
             print "not ready"
         #ready signal for chroma
-        sendChromaSignal("go")
+        sendToChroma("go")
         pub_socket.recv()
         #send data to chroma
         sendToChroma(testID)
@@ -124,18 +106,33 @@ def Manager():
         sendToChroma(testInfo)
         pub_socket.recv()
         #ready to receive "processed" data
-        sendChromaSignal("go")
+        sendToChroma("go")
         newData1 = getFromChroma()
-        sendChromaSignal("go")
+        sendToChroma("go")
         newData2 = getFromChroma()
         #signal back to rat
-        sendRatSignal(jobSignal[0],"DATA")
+        sendToRat(jobSignal[0],"DATA")
         #send the new data
-        if socket.recv_multipart()[2] == "go":
-            sendToRat(jobSignal[0],newData1)
-        if socket.recv_multipart()[2] == "go":
-            sendToRat(jobSignal[0],newData2)
-        
+        while True:
+            if socket.recv_multipart()[2] == "go":
+                sendToRat(jobSignal[0],newData1)
+                break
+            else:
+                #do something else...wait etc
+                print "RAT client not ready"
+                time.sleep(1)
+                print "trying again"
+                sendToRat(jobSignal[0],"DATA")
+        while True:
+            if socket.recv_multipart()[2] == "go":
+                sendToRat(jobSignal[0],newData2)
+                break
+            else:
+                #do something else...wait etc
+                print "RAT client not ready"
+                time.sleep(1)
+                print "trying again"
+                sendToRat(jobSignal[0],"DATA")
        
 
 class Job:
