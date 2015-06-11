@@ -32,7 +32,9 @@ def RAT_Thread(context=None):
     else:
         print "couldn't connect"
         exit(1)
-    ReceiveInfo(RATclient)
+    print "New Data: ",ReceiveInfo(RATclient, RATclient.recv())
+    RATclient.send(b"")
+    print "New Data: ",ReceiveInfo(RATclient, RATclient.recv())
 
 def Signal(socket):
     print "Sending signal at port %s"%(port)
@@ -48,15 +50,14 @@ def SendJob(socket,data):
     socket.send(data)
 # later on probably want to use multipart messages and something
 #like: if is_more: receive info, if signal == something sendJob  
-def ReceiveInfo(socket):
-    signal = socket.recv()
+def ReceiveInfo(socket, signal):
     if signal == "DATA":
         socket.send(b"go")
-        newData1 = socket.recv()
-        socket.send(b"go")
-        newData2 = socket.recv()
-        print "New Data: ",newData1,"\nNew Data: ",newData2
-
+        newData = socket.recv()
+    else:
+        print "error, exiting" 
+        exit(1)
+    return newData
 def main():
     for i in range(NUMBER_OF_CLIENTS):
         Thread(target=RAT_Thread).start()

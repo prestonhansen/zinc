@@ -113,6 +113,7 @@ def Manager():
         #signal back to rat
         sendToRat(jobSignal[0],"DATA")
         #send the new data
+        
         while True:
             if socket.recv_multipart()[2] == "go":
                 sendToRat(jobSignal[0],newData1)
@@ -123,6 +124,10 @@ def Manager():
                 time.sleep(1)
                 print "trying again"
                 sendToRat(jobSignal[0],"DATA")
+        #check if rat is ready for more data
+        socket.recv_multipart()
+        sendToRat(jobSignal[0],"DATA")
+        print 'y'
         while True:
             if socket.recv_multipart()[2] == "go":
                 sendToRat(jobSignal[0],newData2)
@@ -133,7 +138,7 @@ def Manager():
                 time.sleep(1)
                 print "trying again"
                 sendToRat(jobSignal[0],"DATA")
-       
+        print 'x'
 
 class Job:
     def __init__(self, jobID, jobInfo):
