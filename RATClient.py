@@ -38,7 +38,7 @@ def RAT_Thread(context=None):
 
 def Signal(socket):
     print "Sending signal at port %s"%(port)
-    socket.send(b"z")
+    socket.send(b"EV")
     signal = socket.recv()
     print signal
     if signal is not None:

@@ -46,7 +46,6 @@ def getFromRat(address):
 def sendToChroma(data):
     print "sending to chroma\n"
     pub_socket.send(data)
-    #maybe bad idea to have send use this structure
     #define send and receive functions to return true
     #if successful?
     #check for send/receive state at beginning of send/receive
@@ -63,40 +62,43 @@ def sendToRat(address,data):
         data,
     ])
     #want to check for failure here ?? 
-
+def getEventInfo(address,socket):
+    jobSignal = socket.recv_multipart()
+    print jobSignal
+    if jobSignal[2] == 'a':
+        sendToRat(jobSignal[0],'send')
+        testID = getFromRat(jobSignal[0])
+        sendToRat(jobSignal[0],'send')
+        testInfo = getFromRat(jobSignal[0])
+        print "Got data: ",testID,"  ", testInfo
+        return testID, testInfo
+        #multiple return structure should be ok if we know the
+        #format of the data we're getting back
+    else:
+        print "not ready, trying again"
+        time.sleep(.5)
+        sendToRat(jobSingal[0],'DAT')
+        getEventInfo(jobSignal[0],socket)
 #talk to RAT clients, pull information about jobs
 def Manager():
     print "Manager opened at port %s"%(port)
     while True:
         #wait for RAT client signal
         message = socket.recv_multipart()
-        #print address
-        print message
-        print "Signal received from client"
-        #send a signal to the client
-        sendToRat(message[0],'test')
-        time.sleep(0.25)
+        if message[2] == 'EV':
+        #print message
+            print "Signal received from client"
+            identity = message[0]
+            #send a signal to the client
+            #and get event info
+            sendToRat(identity,'EV')
+            testID, testInfo = getEventInfo(identity, socket)
+        else:
+            sendToRat(message[0],'wait')
         
         #receive geometry from client
         #############################
-
         
-        #receive job from client (make sure manager
-        #differentiates between job and geometry)
-        #get a signal that the client is ready to send 
-        #job info (use some identifier)
-        
-        #ready to start pulling data
-        jobSignal = socket.recv_multipart()
-        print jobSignal
-        if jobSignal[2] == 'a':
-            sendToRat(jobSignal[0],'send')
-            testID = getFromRat(jobSignal[0])
-            sendToRat(jobSignal[0],'send')
-            testInfo = getFromRat(jobSignal[0])
-            print "Got data: ",testID,"  ", testInfo
-        else:
-            print "not ready"
         #ready signal for chroma
         sendToChroma("go")
         pub_socket.recv()
@@ -111,34 +113,34 @@ def Manager():
         sendToChroma("go")
         newData2 = getFromChroma()
         #signal back to rat
-        sendToRat(jobSignal[0],"DATA")
+        sendToRat(identity,"DATA")
         #send the new data
         
         while True:
             if socket.recv_multipart()[2] == "go":
-                sendToRat(jobSignal[0],newData1)
+                sendToRat(identity,newData1)
                 break
             else:
                 #do something else...wait etc
                 print "RAT client not ready"
                 time.sleep(1)
                 print "trying again"
-                sendToRat(jobSignal[0],"DATA")
+                sendToRat(identity,"DATA")
         #check if rat is ready for more data
         socket.recv_multipart()
-        sendToRat(jobSignal[0],"DATA")
-        print 'y'
+        sendToRat(identity,"DATA")
         while True:
+            #probably want to change this (wouldnt want to lose
+            #a message that's not just a signal)
             if socket.recv_multipart()[2] == "go":
-                sendToRat(jobSignal[0],newData2)
+                sendToRat(identity,newData2)
                 break
             else:
                 #do something else...wait etc
                 print "RAT client not ready"
                 time.sleep(1)
                 print "trying again"
-                sendToRat(jobSignal[0],"DATA")
-        print 'x'
+                sendToRat(identity,"DATA")
 
 class Job:
     def __init__(self, jobID, jobInfo):
