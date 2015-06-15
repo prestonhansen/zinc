@@ -77,7 +77,7 @@ def getEventInfo(address,socket):
     else:
         print "not ready, trying again"
         time.sleep(.5)
-        sendToRat(jobSingal[0],'DAT')
+        sendToRat(jobSingal[0],'EV')
         getEventInfo(jobSignal[0],socket)
 #talk to RAT clients, pull information about jobs
 def Manager():

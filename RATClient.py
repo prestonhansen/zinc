@@ -12,7 +12,7 @@ port = '5555'
 #socket = context.socket(zmq.REQ)
 #socket.connect( "tcp://localhost:%s" % (port) )
 
-NUMBER_OF_CLIENTS = 1 #doesn't scale properly yet
+NUMBER_OF_CLIENTS = 3 #doesn't scale properly yet
 def set_id(zsocket):
     """Set simple random printable identity on socket"""
     identity = u"%04x-%04x" % (randint(0, 0x10000), randint(0, 0x10000))
@@ -41,10 +41,13 @@ def Signal(socket):
     socket.send(b"EV")
     signal = socket.recv()
     print signal
-    if signal is not None:
+    if signal == 'EV':
         socket.send(b"a")
         return True
-        
+    else:
+        print "server busy, waiting.."
+        time.sleep(1)
+        Signal(socket)
 def SendJob(socket,data):
     print "sending"
     socket.send(data)
