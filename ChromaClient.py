@@ -29,10 +29,7 @@ def main():
         sendSignal("")
         jobID = GetData()
         sendSignal("")
-        jobInfo = GetData()
-        sendSignal("")
         sendBack(doSomething(jobID))
-        sendBack(doSomething(jobInfo))
         exit(1)
     else:
         main()

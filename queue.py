@@ -6,7 +6,7 @@ import threading
 
 context = zmq.Context().instance()
 
-frontend = context.socket(zmq.DEALER)
+frontend = context.socket(zmq.ROUTER)
 backend = context.socket(zmq.ROUTER)
 
 frontport = '5555'
@@ -42,12 +42,31 @@ def Queue():
             #stuff that shouldnt be sent to the server
             #i.e. if msg == .. etc 
         if socks.get(frontend) == zmq.POLLIN:
-            msg = frontend.recv_multipart()
-            #is a check for a ready signal necessary?
-            #i.e. will the server be querying the queue for
-            #any other reason? 
-            #probably for 'send back' requests, probably want to
-            #write something else for that
-            request = [clients.pop(0), ''] + msg
-            frontend.send_multipart(request)
-            
+            if clients:
+                #server wants data
+                msg = frontend.recv_multipart()
+                serverIdentity = msg[0]
+                clientIdentity = clients.pop(0)
+                print msg
+                #is a check for a ready signal necessary?
+                #i.e. will the server be querying the queue for
+                #any other reason? 
+                #probably for 'send back' requests, probably want to
+                #write something else for that
+                request = [clientIdentity, '', 'data']
+                print request
+                backend.send_multipart(request)
+                data = backend.recv_multipart()
+                print data
+                time.sleep(1)
+                frontend.send_multipart([serverIdentity,'',
+                                         data[2],])
+                newMsg = frontend.recv_multipart()
+                print newMsg
+                frontend.send_multipart([serverIdentity,'',''])
+                newData = newMsg[2]
+                backend.send_multipart([clientIdentity,'',newData])
+                print 'sent'
+            else:
+                pass #do something
+Queue()

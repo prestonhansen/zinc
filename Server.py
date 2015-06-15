@@ -16,18 +16,12 @@ import threading
 #import numpy as np (not yet)
 
 context = zmq.Context().instance()
-#frontend = context.socket(zmq.ROUTER)
-#backend = context.socket(zmq.DEALER)
 
 #clients connect here
 port = "5555"
-socket = context.socket(zmq.ROUTER)
+socket = context.socket(zmq.REQ)
 socket.bind( "tcp://*:%s"%(port))
 
-#frontend.bind( "tcp://*:%s" % (port) )
-#backend.bind( "tcp://*:5556" )
-
-#zmq.device(zmq.QUEUE, frontend, backend)
 
 #stuff gets sent to chroma here
 publish_port = "5556"
@@ -82,66 +76,20 @@ def getEventInfo(address,socket):
 #talk to RAT clients, pull information about jobs
 def Manager():
     print "Manager opened at port %s"%(port)
+    #request data
     while True:
-        #wait for RAT client signal
-        message = socket.recv_multipart()
-        if message[2] == 'EV':
-        #print message
-            print "Signal received from client"
-            identity = message[0]
-            #send a signal to the client
-            #and get event info
-            sendToRat(identity,'EV')
-            testID, testInfo = getEventInfo(identity, socket)
-        else:
-            sendToRat(message[0],'wait')
-        
-        #receive geometry from client
-        #############################
-        
-        #ready signal for chroma
-        sendToChroma("go")
+        socket.send(b'test')
+        print 'sent signal'
+        data = socket.recv()
+        print 'got msg: ',data
+        sendToChroma('')
         pub_socket.recv()
-        #send data to chroma
-        sendToChroma(testID)
+        sendToChroma(data)
         pub_socket.recv()
-        sendToChroma(testInfo)
-        pub_socket.recv()
-        #ready to receive "processed" data
-        sendToChroma("go")
-        newData1 = getFromChroma()
-        sendToChroma("go")
-        newData2 = getFromChroma()
-        #signal back to rat
-        sendToRat(identity,"DATA")
-        #send the new data
-        
-        while True:
-            if socket.recv_multipart()[2] == "go":
-                sendToRat(identity,newData1)
-                break
-            else:
-                #do something else...wait etc
-                print "RAT client not ready"
-                time.sleep(1)
-                print "trying again"
-                sendToRat(identity,"DATA")
-        #check if rat is ready for more data
-        socket.recv_multipart()
-        sendToRat(identity,"DATA")
-        while True:
-            #probably want to change this (wouldnt want to lose
-            #a message that's not just a signal)
-            if socket.recv_multipart()[2] == "go":
-                sendToRat(identity,newData2)
-                break
-            else:
-                #do something else...wait etc
-                print "RAT client not ready"
-                time.sleep(1)
-                print "trying again"
-                sendToRat(identity,"DATA")
-
+        sendToChroma('go')
+        newData = getFromChroma()
+        socket.send(newData)
+        socket.recv()
 class Job:
     def __init__(self, jobID, jobInfo):
         #TBD (what would a default constructor look like?)
