@@ -82,12 +82,11 @@ def Manager():
         print 'sent signal'
         data = socket.recv()
         print 'got msg: ',data
-        sendToChroma('')
+        sendToChroma('go')
         pub_socket.recv()
         sendToChroma(data)
-        pub_socket.recv()
-        sendToChroma('go')
-        newData = getFromChroma()
+        newData = pub_socket.recv()
+        #newData = getFromChroma()
         socket.send(newData)
         socket.recv()
 class Job:
