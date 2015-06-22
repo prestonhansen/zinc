@@ -12,7 +12,7 @@ import sys
 import zmq
 import time
 import threading
-#import protobuf (not yet...let's make it do stuff first!)
+import ratchromadata_pb2
 #import numpy as np (not yet)
 
 context = zmq.Context().instance()
@@ -81,30 +81,19 @@ def Manager():
         socket.send(b'test')
         print 'sent signal'
         data = socket.recv()
-        print 'got msg: ',data
+        print 'got data: ',data
         sendToChroma('go')
         pub_socket.recv()
         sendToChroma(data)
         newData = pub_socket.recv()
-        #newData = getFromChroma()
         socket.send(newData)
         socket.recv()
-class Job:
-    def __init__(self, jobID, jobInfo):
-        #TBD (what would a default constructor look like?)
-        #(do we need multiple constructors?)
-        #do jobs share common class data?
-        self.jobID = jobID
-        self.jobInfo = jobInfo
 def main():
     try:
         Manager()
     except (KeyboardInterrupt, SystemExit):
         print "\nReceived keyboard interrupt, exiting\n"
         exit(1)
-        
-#class Event:
-    #magic goes here
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,7 @@
 import sys
 import zmq
 import time
+import ratchromadata_pb2
 #import numpy as np
 from threading import Thread
 from random import randint
@@ -27,9 +28,13 @@ def RAT_Thread(context=None):
     print "sending signal"
     RATclient.send(b'')
     signal=RATclient.recv()
+    #need to make a protobuf message before this
     if signal == 'data':
-        RATclient.send(b'some data')
-        newData = RATclient.recv()
+        #send it
+        RATclient.send(message.SerializeToString())
+        #get it back, parse it
+        newMsg = RATclient.recv()
+        newData = newMsg.ParseFromString()
         print 'got new data: ', newData
     else:
         pass
