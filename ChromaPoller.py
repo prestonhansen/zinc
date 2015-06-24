@@ -83,5 +83,5 @@ def main():
                     if f!=0:
                         print "hit detID":,channelhit[n]," pos=",ev.photons_end.pos[n,:]," time=",ev.photons_end.t[n]-100.0
                 
-if __name__ = "__main__":
+if __name__ == "__main__":
     main()
