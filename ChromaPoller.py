@@ -24,6 +24,10 @@ poll_Server = zmq.Poller()
 poll_Server.register(backend, zmq.POLLIN)
 #can set polling options to kill and restart on user input or
 #set a timeout
+det = uboone()
+            
+sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
+
 def main():
     while True:
         socks = dict(poll_RAT.poll())
@@ -37,39 +41,35 @@ def main():
             chromaData = ratchromadata_pb2.ChromaData()
             chromaData.ParseFromString(msg)
             
-            dir = np.zeros((chromaData.cherenkovdata_size(),3), 
+            dir = np.zeros((len(chromaData.cherenkovdata),3), 
                            dtype = np.float32)
-            for i in chromaData.cherenkovdata_size():
-                dir[i,0] = chromaData.cherenkovdata(i).dx()
-                dir[i,1] = chromaData.cherenkovdata(i).dy()
-                dir[i,2] = chromaData.cherenkovdata(i).dz()
+            for i,cData in enumerate(chromaData.cherenkovdata):
+                dir[i,0] = cData.dx()
+                dir[i,1] = cData.dy()
+                dir[i,2] = cData.dz()
             pol = np.zeros_like(dir)
-            for i in chromaData.cherenkovdata_size():
-                pol[i,0] = chromaData.cherenkovdata(i).px()
-                pol[i,1] = chromaData.cherenkovdata(i).py()
-                pol[i,2] = chromaData.cherenkovdata(i).pz()
+            for i,cData in (chromaData.cherenkovdata):
+                pol[i,0] = cData.px()
+                pol[i,1] = cData.py()
+                pol[i,2] = cData.pz()
             
             pos = np.zeros_like(dir)
-            for i in chromaData.cherenkovdata_size():
-                pos[i,0] = chromaData.cherenkovdata(i).x()
-                pos[i,1] = chromaData.cherenkovdata(i).y()
-                pos[i,2] = chromaData.cherenkovdata(i).z()
+            for i,cData in (chromaData.cherenkovdata):
+                pos[i,0] = cData.x()
+                pos[i,1] = cData.y()
+                pos[i,2] = cData.z()
             
-            t = np.zeros((chromaData.cherenkovdata_size(),1), 
+            t = np.zeros((len(chromaData.cherenkovdata),1), 
                          dtype=np.float32)
-            for i in chromaData.cherenkovdata_size():n
-                t[i,0] = chromaData.cherenkovdata(i).t
+            for i,cData in (chromaData.cherenkovdata):
+                t[i,0] = cData.t()
             
             wavelength = np.zeros_like(t)
-            for i in chromaData.cherenkovdata_size():
-                wavelength[i,0] = chromaData.cherenkovdata(i).wavelength
+            for i,cData in (chromaData.cherenkovdata):
+                wavelength[i,0] = cData.wavelength()
 
             
             #ship to GPU, do some stuff, send data back
-            det = uboone()
-            
-            sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
-            #get photons here, pack them, run sim
             photons = Photons(pos=pos, dir=dir, pol=pol, t=t,
                               wavelength = wavelength)
 
