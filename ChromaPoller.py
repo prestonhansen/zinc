@@ -59,14 +59,14 @@ def main():
                 pos[i,1] = cData.y()
                 pos[i,2] = cData.z()
             
-            t = np.zeros((len(chromaData.cherenkovdata),1), 
+            t = np.zeros((len(chromaData.cherenkovdata)), 
                          dtype=np.float32)
             for i,cData in (chromaData.cherenkovdata):
-                t[i,0] = cData.t()
+                t[i] = cData.t()
             
             wavelength = np.zeros_like(t)
             for i,cData in (chromaData.cherenkovdata):
-                wavelength[i,0] = cData.wavelength()
+                wavelength[i] = cData.wavelength()
 
             
             #ship to GPU, do some stuff, send data back
