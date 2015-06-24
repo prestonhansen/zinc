@@ -37,10 +37,6 @@ def Queue():
                 break
             address = msg[0]
             clients.append(address)
-            
-            #want to sort replies so the dealer isn't sending
-            #stuff that shouldnt be sent to the server
-            #i.e. if msg == .. etc 
         if socks.get(frontend) == zmq.POLLIN:
             if clients:
                 #server wants data
@@ -48,23 +44,27 @@ def Queue():
                 serverIdentity = msg[0]
                 clientIdentity = clients.pop(0)
                 print msg
-                #is a check for a ready signal necessary?
-                #i.e. will the server be querying the queue for
-                #any other reason? 
-                #probably for 'send back' requests, probably want to
-                #write something else for that
-                request = [clientIdentity, '', 'data']
-                print request
-                backend.send_multipart(request)
+                #get detector config
+                requestConfig = [clientIdentity, '', 'cfg']
+                print requestConfig
+                backend.send_multipart(requestConfig)
+                cfg = backend.recv_multipart()
+                print cfg
+                #send detector config
+                frontend.send_multipart([serverIdentity,'',
+                                         cfg[2],])
+                frontend.recv_multipart()
+                #get data
+                requestData = [clientIdentity, '', 'data']
+                backend.send_multipart(requestData)
                 data = backend.recv_multipart()
-                print data
-                time.sleep(1)
+                #send data
                 frontend.send_multipart([serverIdentity,'',
                                          data[2],])
+                #get processed data back
                 newMsg = frontend.recv_multipart()
-                print newMsg
-                frontend.send_multipart([serverIdentity,'',''])
                 newData = newMsg[2]
+                #send processed data back to client
                 backend.send_multipart([clientIdentity,'',newData])
                 print 'sent'
             else:
