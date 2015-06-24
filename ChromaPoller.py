@@ -76,7 +76,12 @@ def main():
             events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
             
             for ev in events:
-                nhits = ev.channels.hit["""something goes here"""]
+                detected_photons = ev.photons_end.flags[:] & chroma.event.SURFACE_DETECT
+                channelhit = np.zeros(len(detected_photons),dtype=np.int)
+                channelhit[:] = det.solid_id_to_channel_index[ det.solid_id[ev.photons_end.last_hit_triangles[:] ] ]
+                for n,f in enumerate(detected_photons):
+                    if f!=0:
+                        print "hit detID":,channelhit[n]," pos=",ev.photons_end.pos[n,:]," time=",ev.photons_end.t[n]-100.0
                 
 if __name__ = "__main__":
     main()
