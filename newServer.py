@@ -43,26 +43,27 @@ def MakePhotons(num_pmts):
 
 def Server():
     print "opened"
-    #send the queuer our identity.
-    socket.send(b"")
-    num_pmts = int(socket.recv())
-    print "got num. of pmts: ",num_pmts
-
-    # get data for chroma
-    socket.send(b"")
-    msg = socket.recv()
-    mychromadata = ratchromadata_pb2.ChromaData()
-    mychromadata.ParseFromString(msg)
-    print mychromadata, "\n"
-    print "message size: ",mychromadata.ByteSize()
-    mychromadata.SerializeToString()
-    chromaSocket.send(mychromadata)
-    print "sent to chroma"
-    #generate some photons
-    #phits = MakePhotons(num_pmts)
-    #print "making some fake photons\n"
-    #print phits
-    #ship em
-    #socket.send(phits.SerializeToString())    
-
+    while True:
+        #send the queuer our identity.
+        socket.send(b"")
+        num_pmts = int(socket.recv())
+        print "got num. of pmts: ",num_pmts
+    
+        # get data for chroma
+        socket.send(b"")
+        msg = socket.recv()
+        mychromadata = ratchromadata_pb2.ChromaData()
+        mychromadata.ParseFromString(msg)
+        print mychromadata, "\n"
+        print "message size: ",mychromadata.ByteSize()
+        mychromadata.SerializeToString()
+        chromaSocket.send(mychromadata)
+        print "sent to chroma"
+        #generate some photons
+        #phits = MakePhotons(num_pmts)
+        #print "making some fake photons\n"
+        #print phits
+        #ship em
+        #socket.send(phits.SerializeToString())    
+    
 Server()
