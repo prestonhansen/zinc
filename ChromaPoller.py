@@ -41,13 +41,22 @@ def main():
             chromaData = ratchromadata_pb2.ChromaData()
             chromaData.ParseFromString(msg)
             print chromaData
-            nphotons = sum(1 for p in enumerate(chromaData.cherenkovdata))
+            nsphotons = 0
+            for i,sData in enumerate(chromaData.stepdata):
+                pass #use np.random.exponential here
             dphi = np.random.uniform(0,2.0*np.pi, nphotons)
             dcos = np.random.uniform(-1.0, 1.0, nphotons)
             dir = np.array( zip( np.sqrt(1-dcos[:]*dcos[:])*np.cos(dphi[:]), np.sqrt(1-dcos[:]*dcos[:])*np.sin(dphi[:]), dcos[:] ), dtype=np.float32 )
-
-            print "NUMPHOTONS: ",nphotons
+            pos = np.zeros((nphotons,3), dtype=np.float32)
+            for i,sData in enumerate(chromaData.stepdata):
+                pos[i,0] = random.uniform(sData.step_start_x())
+                pos[i,1] = random.uniform(sData.step_start_y())
+                pos[i,2] = random.uniform(sData.step_start_z())
+                
+            
             """for cherenkov photons"""
+            #nphotons = sum(1 for p in enumerate(chromaData.stepdata))
+            #print "NUMPHOTONS: ",nphotons
             # dir = np.zeros((nphotons,3), 
             #               dtype = np.float32)
             # for i,cData in enumerate(chromaData.cherenkovdata):
