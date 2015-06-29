@@ -27,7 +27,33 @@ poll_Server.register(backend, zmq.POLLIN)
 det = uboone()
             
 sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
+def GenScintPhotons(protoString):
+    nsphotons = 0
+    for i,sData in enumerate(protoString.stepdata):
+        nsphotons += sData.nphotons()
+    pos = np.zeros((nsphotons,3),dtype=np.float32)
+    pol = np.zeros_like(pos)
+    t = np.zeros(nsphotons, dtype=np.float32)
+    wavelengths = np.empty(nsphotons, np.float32)
+    wavelengths.fill(128.0)
+    dphi = np.random.uniform(0,2.0*np.pi, nphotons)
+    dcos = np.random.uniform(-1.0, 1.0, nphotons)
+    dir = np.array( zip( np.sqrt(1-dcos[:]*dcos[:])*np.cos(dphi[:]), np.sqrt(1-dcos[:]*dcos[:])*np.sin(dphi[:]), dcos[:] ), dtype=np.float32 )
 
+    stepPhotons = 0
+    for i,sData in enumerate(protoString.stepdata):
+        for j in xrange(stepPhotons, (stepPhotons+sData.nphotons())):
+            pos[j,0] = np.random.uniform(sData.step_start_x(),sData.step_end_x())
+            pos[j,1] = np.random.uniform(sData.step_start_y(),sData.step_end_y())
+            pos[j,2] = np.random.uniform(sData.step_start_z(),sData.step_end_z())
+        for j in xrange(stepPhotons, (stepPhotons+sData.nphotons())):
+            pol[j,0] = random.uniform(0,((1/3.0)**.5))
+            pol[j,1] = random.uniform(0,((1/3.0)**.5))
+            pol[j,2] = ((1 - pol[j,0]**2 - pol[j,1]**2)**.5)
+        for j in xrange(stepPhotons, (stepPhotons+sData.nphotons())):
+            t[j] = (np.random.exponential(1/45.0) + (sData.step_end_t()-sData.step_start_t()))
+        stepPhotons += sData.nphotons()
+    return Photons(pos = pos, pol = pol, t = t, dir = dir, wavelengths = wavelengths)
 def main():
     while True:
         socks = dict(poll_Server.poll())
@@ -41,6 +67,9 @@ def main():
             chromaData = ratchromadata_pb2.ChromaData()
             chromaData.ParseFromString(msg)
             print chromaData
+<<<<<<< HEAD
+            photons = GenScintPhotons(chromaData)
+=======
             nsphotons = 0
             for i,sData in enumerate(chromaData.stepdata):
                 pass #use np.random.exponential here
@@ -53,6 +82,7 @@ def main():
                 pos[i,1] = random.uniform(sData.step_start_y())
                 pos[i,2] = random.uniform(sData.step_start_z())
                 
+>>>>>>> 3e02b02ca38c3e8e6043f319de759ae737522a31
             
             """for cherenkov photons"""
             #nphotons = sum(1 for p in enumerate(chromaData.stepdata))
@@ -86,8 +116,8 @@ def main():
 
             
             #ship to GPU, do some stuff, send data back
-            photons = Photons(pos=pos, dir=dir, pol=pol, t=t,
-                              wavelengths = wavelengths)
+            #photons = Photons(pos=pos, dir=dir, pol=pol, t=t,
+            #                 wavelengths = wavelengths)
 
             events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
             
