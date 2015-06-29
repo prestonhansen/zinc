@@ -56,8 +56,8 @@ def Server():
         mychromadata.ParseFromString(msg)
         print mychromadata, "\n"
         print "message size: ",mychromadata.ByteSize()
-        mychromadata.SerializeToString()
-        chromaSocket.send(mychromadata)
+        
+        chromaSocket.send(msg)
         print "sent to chroma"
         #generate some photons
         #phits = MakePhotons(num_pmts)
@@ -65,5 +65,9 @@ def Server():
         #print phits
         #ship em
         #socket.send(phits.SerializeToString())    
-    
+        phits = photonHit_pb2.PhotonHits()
+        phits = chromaSocket.recv()
+        print "got new data, sending to queue"
+        socket.send(phits)
+        socket.recv()
 Server()

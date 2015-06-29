@@ -64,9 +64,12 @@ def Queue():
                 #get processed data back
                 newMsg = frontend.recv_multipart()
                 newData = newMsg[2]
+                print "got new data"
+                #send ok signal to server
+                frontend.send_multipart([serverIdentity,'',''])
                 #send processed data back to client
                 backend.send_multipart([clientIdentity,'',newData])
-                print 'sent'
+                print 'sent to RAT'
             else:
                 pass #do something
 Queue()

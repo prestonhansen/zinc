@@ -10,7 +10,7 @@ import chroma.event
 from uboone import uboone
 
 import ratchromadata_pb2
-#import photonHit_pb2
+import photonHit_pb2
 
 context = zmq.Context().instance()
 
@@ -55,6 +55,38 @@ def GenScintPhotons(protoString):
             t[j] = (np.random.exponential(1/45.0) + (sData.step_end_t-sData.step_start_t))
         stepPhotons += sData.nphotons
     return Photons(pos = pos, pol = pol, t = t, dir = dir, wavelengths = wavelengths)
+    
+def MakePhotonMessage(events):
+    phits = photonHit_pb2.PhotonHits()
+    for ev in events:
+        detected_photons = ev.photons_end.flags[:] & chroma.event.SURFACE_DETECT
+        channelhit = np.zeros(len(detected_photons),dtype=np.int)
+        channelhit[:] = det.solid_id_to_channel_index[ det.solid_id[ev.photons_end.last_hit_triangles[:] ] ]
+        for n,f in enumerate(detected_photons):
+            if f!=0:
+                print "hit detID:",channelhit[n]," pos=",ev.photons_end.pos[n,:]," time=",ev.photons_end.t[n]
+    for ev in events:
+        detected_photons = ev.photons_end.flags[:] & chroma.event.SURFACE_DETECT
+        channelhit = np.zeros(len(detected_photons),dtype=np.int)
+        channelhit[:] = det.solid_id_to_channel_index[ det.solid_id[ev.photons_end.last_hit_triangles[:] ] ]
+        aphoton = phits.photon.add()
+        aphoton.count = 1
+        for x in xrange(0, aphoton.count):
+            aphoton.PMTID = channelhit[x]
+            aphoton.Time = ev.photons_end.t[x]
+            aphoton.KineticEnergy = (2*(np.pi)*(6.582*(10**-16))*(299792458.0))/(ev.photons_end.wavelengths[x])
+            aphoton.posX = ev.photons_end.pos[x,0]
+            aphoton.posY = ev.photons_end.pos[x,1]
+            aphoton.posZ = ev.photons_end.pos[x,2]
+            #not sure how to get momentum from chroma yet
+            aphoton.momX = ((aphoton.KineticEnergy/3.0)**0.5)
+            aphoton.momY = ((aphoton.KineticEnergy/3.0)**0.5)
+            aphoton.momZ = ((aphoton.KineticEnergy/3.0)**0.5)
+            aphoton.polX = ev.photons_end.pol[x,0]
+            aphoton.polY = ev.photons_end.pol[x,1]
+            aphoton.polZ = ev.photons_end.pol[x,2]
+            aphoton.origin = 1 #change this to grab from chroma
+    return phits
 def main():
     while True:
         socks = dict(poll_Server.poll())
@@ -107,14 +139,10 @@ def main():
             #                 wavelengths = wavelengths)
 
             events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
+            #pack hitphoton data into protobuf
+            phits = MakePhotonMessage(events)
+            #ship it
+            backend.send(phits.SerializeToString())
             
-            for ev in events:
-                detected_photons = ev.photons_end.flags[:] & chroma.event.SURFACE_DETECT
-                channelhit = np.zeros(len(detected_photons),dtype=np.int)
-                channelhit[:] = det.solid_id_to_channel_index[ det.solid_id[ev.photons_end.last_hit_triangles[:] ] ]
-                for n,f in enumerate(detected_photons):
-                    if f!=0:
-                        print "hit detID:",channelhit[n]," pos=",ev.photons_end.pos[n,:]," time=",ev.photons_end.t[n]-100.0
-                
 if __name__ == "__main__":
     main()
