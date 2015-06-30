@@ -62,29 +62,27 @@ def MakePhotonMessage(events):
         detected_photons = ev.photons_end.flags[:] & chroma.event.SURFACE_DETECT
         channelhit = np.zeros(len(detected_photons),dtype=np.int)
         channelhit[:] = det.solid_id_to_channel_index[ det.solid_id[ev.photons_end.last_hit_triangles[:] ] ]
+        phits.count = int(np.count_nonzero(detected_photons))
         for n,f in enumerate(detected_photons):
-            if f!=0:
+            if f==0:
+                continue
+            else:
                 print "hit detID:",channelhit[n]," pos=",ev.photons_end.pos[n,:]," time=",ev.photons_end.t[n]
-    for ev in events:
-        detected_photons = ev.photons_end.flags[:] & chroma.event.SURFACE_DETECT
-        channelhit = np.zeros(len(detected_photons),dtype=np.int)
-        channelhit[:] = det.solid_id_to_channel_index[ det.solid_id[ev.photons_end.last_hit_triangles[:] ] ]
-        aphoton = phits.photon.add()
-        aphoton.count = 1
-        for x in xrange(0, aphoton.count):
-            aphoton.PMTID = channelhit[x]
-            aphoton.Time = ev.photons_end.t[x]
-            aphoton.KineticEnergy = (2*(np.pi)*(6.582*(10**-16))*(299792458.0))/(ev.photons_end.wavelengths[x])
-            aphoton.posX = ev.photons_end.pos[x,0]
-            aphoton.posY = ev.photons_end.pos[x,1]
-            aphoton.posZ = ev.photons_end.pos[x,2]
+
+            aphoton = phits.photon.add()
+            aphoton.PMTID = int(channelhit[n])
+            aphoton.Time = float(ev.photons_end.t[n])
+            aphoton.KineticEnergy = float((2*(np.pi)*(6.582*(10**-16))*(299792458.0))/(ev.photons_end.wavelengths[n]))
+            aphoton.posX = float(ev.photons_end.pos[n,0])
+            aphoton.posY = float(ev.photons_end.pos[n,1])
+            aphoton.posZ = float(ev.photons_end.pos[n,2])
             #not sure how to get momentum from chroma yet
-            aphoton.momX = ((aphoton.KineticEnergy/3.0)**0.5)
-            aphoton.momY = ((aphoton.KineticEnergy/3.0)**0.5)
-            aphoton.momZ = ((aphoton.KineticEnergy/3.0)**0.5)
-            aphoton.polX = ev.photons_end.pol[x,0]
-            aphoton.polY = ev.photons_end.pol[x,1]
-            aphoton.polZ = ev.photons_end.pol[x,2]
+            aphoton.momX = float(((aphoton.KineticEnergy/3.0)**0.5))
+            aphoton.momY = float(((aphoton.KineticEnergy/3.0)**0.5))
+            aphoton.momZ = float(((aphoton.KineticEnergy/3.0)**0.5))
+            aphoton.polX = float(ev.photons_end.pol[n,0])
+            aphoton.polY = float(ev.photons_end.pol[n,1])
+            aphoton.polZ = float(ev.photons_end.pol[n,2])
             aphoton.origin = 1 #change this to grab from chroma
     return phits
 def main():
@@ -141,6 +139,7 @@ def main():
             events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
             #pack hitphoton data into protobuf
             phits = MakePhotonMessage(events)
+            print phits
             #ship it
             backend.send(phits.SerializeToString())
             

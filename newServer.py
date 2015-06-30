@@ -67,6 +67,7 @@ def Server():
         #socket.send(phits.SerializeToString())    
         phits = photonHit_pb2.PhotonHits()
         phits = chromaSocket.recv()
+        print phits
         print "got new data, sending to queue"
         socket.send(phits)
         socket.recv()

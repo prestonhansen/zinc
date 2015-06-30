@@ -2,7 +2,7 @@ import sys
 import zmq
 import time
 import threading
-
+import photonHit_pb2
 
 context = zmq.Context().instance()
 
@@ -63,7 +63,11 @@ def Queue():
                                          data[2],])
                 #get processed data back
                 newMsg = frontend.recv_multipart()
+                print newMsg
                 newData = newMsg[2]
+                temp = photonHit_pb2.PhotonHits()
+                temp.ParseFromString(newData)
+                print temp
                 print "got new data"
                 #send ok signal to server
                 frontend.send_multipart([serverIdentity,'',''])
