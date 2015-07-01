@@ -40,7 +40,7 @@ def GenScintPhotons(protoString):
     dphi = np.random.uniform(0,2.0*np.pi, nsphotons)
     dcos = np.random.uniform(-1.0, 1.0, nsphotons)
     dir = np.array( zip( np.sqrt(1-dcos[:]*dcos[:])*np.cos(dphi[:]), np.sqrt(1-dcos[:]*dcos[:])*np.sin(dphi[:]), dcos[:] ), dtype=np.float32 )
-
+    mom = np.zeros_like(dir)
     stepPhotons = 0
     for i,sData in enumerate(protoString.stepdata):
         for j in xrange(stepPhotons, (stepPhotons+sData.nphotons)):
@@ -76,10 +76,10 @@ def MakePhotonMessage(events):
             aphoton.posX = float(ev.photons_end.pos[n,0])
             aphoton.posY = float(ev.photons_end.pos[n,1])
             aphoton.posZ = float(ev.photons_end.pos[n,2])
-            #not sure how to get momentum from chroma yet
-            aphoton.momX = float(((aphoton.KineticEnergy/3.0)**0.5))
-            aphoton.momY = float(((aphoton.KineticEnergy/3.0)**0.5))
-            aphoton.momZ = float(((aphoton.KineticEnergy/3.0)**0.5))
+            # px = |p|*cos(theta) = (h / lambda)*(<u,v> / |u||v|) = (h / lambda)*(u1 / |u|), etc.
+            aphoton.momX = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) * (ev.photons_end.dir[n,0] / ((ev.photons_end.dir[n,0]**2 + ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5)))
+            aphoton.momY = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) * (ev.photons_end.dir[n,1] / ((ev.photons_end.dir[n,0]**2 + ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5)))
+            aphoton.momZ = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) * (ev.photons_end.dir[n,2] / ((ev.photons_end.dir[n,0]**2 + ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5)))
             aphoton.polX = float(ev.photons_end.pol[n,0])
             aphoton.polY = float(ev.photons_end.pol[n,1])
             aphoton.polZ = float(ev.photons_end.pol[n,2])
