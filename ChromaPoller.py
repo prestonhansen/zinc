@@ -40,7 +40,6 @@ def GenScintPhotons(protoString):
     dphi = np.random.uniform(0,2.0*np.pi, nsphotons)
     dcos = np.random.uniform(-1.0, 1.0, nsphotons)
     dir = np.array( zip( np.sqrt(1-dcos[:]*dcos[:])*np.cos(dphi[:]), np.sqrt(1-dcos[:]*dcos[:])*np.sin(dphi[:]), dcos[:] ), dtype=np.float32 )
-    mom = np.zeros_like(dir)
     stepPhotons = 0
     for i,sData in enumerate(protoString.stepdata):
         for j in xrange(stepPhotons, (stepPhotons+sData.nphotons)):
