@@ -76,9 +76,14 @@ def MakePhotonMessage(events):
             aphoton.posY = float(ev.photons_end.pos[n,1])
             aphoton.posZ = float(ev.photons_end.pos[n,2])
             # px = |p|*cos(theta) = (h / lambda)*(<u,v> / |u||v|) = (h / lambda)*(u1 / |u|), etc.
-            aphoton.momX = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) * (ev.photons_end.dir[n,0] / ((ev.photons_end.dir[n,0]**2 + ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5)))
-            aphoton.momY = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) * (ev.photons_end.dir[n,1] / ((ev.photons_end.dir[n,0]**2 + ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5)))
-            aphoton.momZ = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) * (ev.photons_end.dir[n,2] / ((ev.photons_end.dir[n,0]**2 + ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5)))
+            aphoton.momX = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) * 
+                                  (ev.photons_end.dir[n,0] / ((ev.photons_end.dir[n,0]**2 + 
+                                                               ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5))))
+            aphoton.momY = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) * 
+                                  (ev.photons_end.dir[n,1] / ((ev.photons_end.dir[n,0]**2 + 
+                                                               ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5))))
+            aphoton.momZ = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n]) *
+                                  ((ev.photons_end.dir[n,2]) / ((ev.photons_end.dir[n,0]**2 + ev.photons_end.dir[n,1]**2 + ev.photons_end.dir[n,2]**2)**.5))))
             aphoton.polX = float(ev.photons_end.pol[n,0])
             aphoton.polY = float(ev.photons_end.pol[n,1])
             aphoton.polZ = float(ev.photons_end.pol[n,2])
