@@ -19,6 +19,7 @@ disconnect or die without breaking everything else.
 
 
 ---------------USAGE---------------
-UPDATE 07/07/15: simply run zinc.py and magic will happen
+
+UPDATE 07/07/15: simply run zinc.py, a rat macro, and ChromaPoller.py in your chroma environment and magic will happen
 
 //As of now, the order is queue.py/server.py -> server.py/queue.py -> ChromaPoller.py -> run RAT.//
