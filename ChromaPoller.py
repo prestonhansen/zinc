@@ -42,6 +42,8 @@ def GenScintPhotons(protoString):
     dir = np.array( zip( np.sqrt(1-dcos[:]*dcos[:])*np.cos(dphi[:]), np.sqrt(1-dcos[:]*dcos[:])*np.sin(dphi[:]), dcos[:] ), dtype=np.float32 )
     stepPhotons = 0
     for i,sData in enumerate(protoString.stepdata):
+        #instead of appending to array every loop, the full size (nsphotons x 3) is allocated to begin, then 
+        #values are filled properly by incrementing stepPhotons.
         for j in xrange(stepPhotons, (stepPhotons+sData.nphotons)):
             pos[j,0] = np.random.uniform(sData.step_start_x,sData.step_end_x)
             pos[j,1] = np.random.uniform(sData.step_start_y,sData.step_end_y)
@@ -76,14 +78,14 @@ def MakePhotonMessage(events):
             aphoton.posY = float(ev.photons_end.pos[n,1])
             aphoton.posZ = float(ev.photons_end.pos[n,2])
             # px = |p|*cos(theta) = (h / lambda)*(<u,v> / |u||v|) = (h / lambda)*(u1 / |u|), etc.
-            #turns out we don't need to to this... px = |p|*phat = (h / lambda) * (dir[n,0]...etc)
+            #turns out we don't need to to this... px = |p|*phat = (h / lambda) * (dir[n,0]...etc.
             aphoton.momX = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n])) * (ev.photons_end.dir[n,0]))
             aphoton.momY = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n])) * (ev.photons_end.dir[n,1]))
             aphoton.momZ = float(((4.135667516 * (10**-21))/(ev.photons_end.wavelengths[n])) * (ev.photons_end.dir[n,2]))
             aphoton.polX = float(ev.photons_end.pol[n,0])
             aphoton.polY = float(ev.photons_end.pol[n,1])
             aphoton.polZ = float(ev.photons_end.pol[n,2])
-            aphoton.origin = CHROMA
+            aphoton.origin = photonHit_pb2.Photon.CHROMA 
     return phits
 def main():
     while True:
@@ -102,39 +104,42 @@ def main():
             photons = GenScintPhotons(chromaData)
             
             """for cherenkov photons"""
-            #nphotons = sum(1 for p in enumerate(chromaData.stepdata))
-            #print "NUMPHOTONS: ",nphotons
-            # dir = np.zeros((nphotons,3), 
-            #               dtype = np.float32)
-            # for i,cData in enumerate(chromaData.cherenkovdata):
-            #   dir[i,0] = cData.dx()
-            #     dir[i,1] = cData.dy()
-            #     dir[i,2] = cData.dz()
-            # pol = np.zeros_like(dir)
-            # for i,cData in (chromaData.cherenkovdata):
-            #     pol[i,0] = cData.px()
-            #     pol[i,1] = cData.py()
-            #     pol[i,2] = cData.pz()
+            #if there are cherenkov photons, simulate and add them to the message
+            #before it's sent back.
             
-            # pos = np.zeros_like(dir)
-            # for i,cData in (chromaData.cherenkovdata):
-            #     pos[i,0] = cData.x()
-            #     pos[i,1] = cData.y()
-            #     pos[i,2] = cData.z()
-            
-            # t = np.zeros((nphotons), 
-            #              dtype=np.float32)
-            # for i,cData in (chromaData.cherenkovdata):
-            #     t[i] = cData.t()
-            
-            # wavelengths = np.zeros_like(t)
-            # for i,cData in (chromaData.cherenkovdata):
-            #     wavelengths[i] = cData.wavelengths()
-
-            
-            #ship to GPU, do some stuff, send data back
-            #photons = Photons(pos=pos, dir=dir, pol=pol, t=t,
-            #                 wavelengths = wavelengths)
+            # nphotons = sum(1 for p in enumerate(chromaData.stepdata))
+            # if nphotons > 0:
+            #     print "NUMPHOTONS: ",nphotons
+            #     dir = np.zeros((nphotons,3), 
+            #                    dtype = np.float32)
+            #     for i,cData in enumerate(chromaData.cherenkovdata):
+            #         dir[i,0] = cData.dx()
+            #         dir[i,1] = cData.dy()
+            #         dir[i,2] = cData.dz()
+            #         pol = np.zeros_like(dir)
+            #         for i,cData in (chromaData.cherenkovdata):
+            #             pol[i,0] = cData.px()
+            #             pol[i,1] = cData.py()
+            #             pol[i,2] = cData.pz()
+                        
+            #         pos = np.zeros_like(dir)
+            #         for i,cData in (chromaData.cherenkovdata):
+            #             pos[i,0] = cData.x()
+            #             pos[i,1] = cData.y()
+            #             pos[i,2] = cData.z()
+                
+            #         t = np.zeros((nphotons), 
+            #                      dtype=np.float32)
+            #         for i,cData in (chromaData.cherenkovdata):
+            #             t[i] = cData.t()
+                    
+            #         wavelengths = np.zeros_like(t)
+            #         for i,cData in (chromaData.cherenkovdata):
+            #             wavelengths[i] = cData.wavelengths()
+                
+            #         #ship to GPU, do some stuff, send data back
+            #         photons = Photons(pos=pos, dir=dir, pol=pol, t=t,
+            #                   wavelengths = wavelengths)
 
             events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
             #pack hitphoton data into protobuf
