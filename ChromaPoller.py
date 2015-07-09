@@ -92,6 +92,9 @@ def main():
         socks = dict(poll_Server.poll())
         
         if socks.get(backend) == zmq.POLLIN:
+            optics = backend.recv()
+            print optics
+            backend.send(b'')
             msg = backend.recv()#_multipart()
             #^decide whether to use multipart or not^
             if not msg:
