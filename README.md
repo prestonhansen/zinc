@@ -1,6 +1,7 @@
-# RATChromaServer
+# zinc: a ZMQ Interface for Chroma
 
-
+##07/07/15##
+Renamed the repo to zinc, and condensed all functionality into zinc.py. as of right now zinc.py specifically interfaces with the RAT/Chroma setup that I'm working with, but eventually it will be written generally such that anyone cloning the repo can easily configure it for their project.
 ##06/24/15##
 some files in the repo are deprecated. 
 
@@ -18,4 +19,7 @@ disconnect or die without breaking everything else.
 
 
 ---------------USAGE---------------
-As of now, the order is queue.py/server.py -> server.py/queue.py -> ChromaPoller.py -> run RAT.
+
+UPDATE 07/07/15: simply run zinc.py, a rat macro, and ChromaPoller.py in your chroma environment and magic will happen
+
+//As of now, the order is queue.py/server.py -> server.py/queue.py -> ChromaPoller.py -> run RAT.//
