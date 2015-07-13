@@ -161,35 +161,41 @@ def Queue(l):
                 backend.send_multipart(requestConfig)
                 cfg = backend.recv_multipart()
                 l.acquire()
-                print cfg
+                #print cfg
                 l.release()
                 #send detector config
                 frontend.send_multipart([serverIdentity,'',cfg[2],])
                 frontend.recv_multipart()
                 #get data
-                requestData = [clientIdentity, '', 'data']
-                backend.send_multipart(requestData)
-                data = backend.recv_multipart()
-                #send data
-                frontend.send_multipart([serverIdentity,'',data[2],])
-                #get processed data back
-                newMsg = frontend.recv_multipart()
-                #l.acquire()
-               # print newMsg
-                #l.release()
-                newData = newMsg[2]
-                l.acquire()
-                print "got new data"
-                l.release()
-                #send ok signal to server
-                frontend.send_multipart([serverIdentity,'',''])
-                #send processed data back to client
-                backend.send_multipart([clientIdentity,'',newData])
-                l.acquire()
-                print 'sent to RAT'
-                l.release()
+                #basic implementation of multiple events. assumes server and client identities
+                #are static for the duration of a run (of multiple events). to properly scale to
+                #multiple clients need to have a kill signal or some other method of breaking out
+                # of the loop to start working on other client requests.
+                while True:
+                    requestData = [clientIdentity, '', 'data']
+                    backend.send_multipart(requestData)
+                    data = backend.recv_multipart()
+                    #send data
+                    frontend.send_multipart([serverIdentity,'',data[2],])
+                    #get processed data back
+                    newMsg = frontend.recv_multipart()
+                    #l.acquire()
+                   # print newMsg
+                    #l.release()
+                    newData = newMsg[2]
+                    l.acquire()
+                    print "queue: got new data"
+                    l.release()
+                    #send ok signal to server
+                    #frontend.send_multipart([serverIdentity,'',''])
+                    #send processed data back to client
+                    backend.send_multipart([clientIdentity,'',newData])
+                    backend.recv_multipart()
+                    l.acquire()
+                    print 'queue: sent to RAT'
+                    l.release()
         else:
-            pass #(this stuff doesn't work right yet)
+            pass #(this stuff doesn't work properly yet)
             # l.acquire()
             # print "no response, restarting and trying again...\n"
             # l.release()
@@ -212,26 +218,33 @@ def Server(l):
     print "opened"
     l.release()
     f = open('MESSAGESIZE','w')
+    #while True:
+    #send the queuer our identity.
+    socket.send(b"")
+    #queuer replies with optical data
+    oData = socket.recv()
+    socket.send(b"")
+    l.acquire()
+    print "got optical info "
+    l.release()
+    #send chroma optical data
+    chromaSocket.send(oData)
+    chromaSocket.recv()
+    #simple while loop to facilitate multiple events per run. as described
+    #above, need to implement a way to break the loop so that the server layers
+    #dont need to be restarted to work on a new RAT client request.
     while True:
-        #send the queuer our identity.
-        socket.send(b"")
-        num_pmts = int(socket.recv())
-        l.acquire()
-        print "got num. of pmts: ",num_pmts
-        l.release()
-
         # get data for chroma
-        socket.send(b"")
         msg = socket.recv()
         mychromadata = ratchromadata_pb2.ChromaData()
         mychromadata.ParseFromString(msg)
         #print mychromadata, "\n"
         #print "message size: ",mychromadata.ByteSize()
         f.write(str(mychromadata.ByteSize())+'\n')
-        
+
         chromaSocket.send(msg)
         l.acquire()
-        print "sent to chroma"
+        print "Server: sent to chroma"
         l.release()
         #generate some photons
         #phits = MakePhotons(num_pmts)
@@ -244,10 +257,11 @@ def Server(l):
         #print phits
         #print "bytesize: ",phits.ByteSize()
         l.acquire()
-        print "got new data, sending to queue"
+        print "Server: got new data, sending to queue"
         l.release()
         socket.send(phits)
-        socket.recv()
+
+
 
 
 ############### END CLIENT AND SERVER LAYERS ###############
