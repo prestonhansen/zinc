@@ -1,17 +1,18 @@
 import os, sys, time
 import zmq
-import chroma.api as api
-api.use_cuda()
+#import chroma.api as api
+#api.use_cuda()
 import numpy as np
-from chroma.sim import Simulation
-from chroma.event import Photons
-import chroma.event
+#from chroma.sim import Simulation
+#from chroma.event import Photons
+#import chroma.event
 
-from uboone import uboone
+#from uboone import uboone
 
 import ratchromadata_pb2
 import photonHit_pb2
 import cProfile
+import ChromaSimCython
 context = zmq.Context().instance()
 
 backend = context.socket(zmq.REP)
@@ -24,9 +25,9 @@ backend.connect( "tcp://localhost:%s"%(backport) )
 #poll_Server.register(backend, zmq.POLLIN)
 #can set polling options to kill and restart on user input or
 #set a timeout
-det = uboone()
+#det = uboone()
             
-sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
+#sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
 
 
 def GenScintPhotons(protoString):
@@ -110,9 +111,9 @@ def main():
         chromaData = ratchromadata_pb2.ChromaData()
         chromaData.ParseFromString(msg)
         #print chromaData
-        print "got chroma data"
-        photons = GenScintPhotons(chromaData)
-        print "finished photon gen"
+        #print "got chroma data"
+        #photons = ChromaSimCython.GenScintPhotons(chromaData)
+        #print "finished photon gen"
         """for cherenkov photons"""
         #if there are cherenkov photons, simulate and add them to the message
         #before it's sent back.
@@ -151,10 +152,9 @@ def main():
         #         photons = Photons(pos=pos, dir=dir, pol=pol, t=t,
         #                   wavelengths = wavelengths)
 
-        events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
+        #events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
         #pack hitphoton data into protobuf
-        print events
-        phits = MakePhotonMessage(events)
+        phits = ChromaSimCython.MakePhotonMessage(chromaData)
         #print phits
         #ship it
         stime = time.clock()
