@@ -111,7 +111,7 @@ def main():
         chromaData = ratchromadata_pb2.ChromaData()
         chromaData.ParseFromString(msg)
         #print chromaData
-        #print "got chroma data"
+        print "got chroma data"
         #photons = ChromaSimCython.GenScintPhotons(chromaData)
         #print "finished photon gen"
         """for cherenkov photons"""
@@ -154,13 +154,12 @@ def main():
 
         #events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
         #pack hitphoton data into protobuf
-        phits = ChromaSimCython.MakePhotonMessage(chromaData)
+        
+        #currently working on having c++ linked code send proto object back to server.
+        ChromaSimCython.MakePhotonMessage(chromaData)
         #print phits
         #ship it
-        stime = time.clock()
-        backend.send(phits.SerializeToString())
-        etime = time.clock()
-        print "TIME TO SER: ",(stime-etime)
+        #backend.send(phits.SerializeToString())
         #print "sent data"
 if __name__ == "__main__":
     cProfile.run("main()")
