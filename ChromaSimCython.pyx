@@ -32,9 +32,9 @@ det = uboone()
 sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
 
 @cython.boundscheck(False)
-def MessagePack(np.ndarray[DTYPEFINT_t, ndim = 1, mode = "c"], np.ndarray[DTYPEFLOAT32_t, ndim = 1, mode = "c"], np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"], np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"], np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"], np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"], nphotons):
-    C_MessagePack(&input[0],&input[0],&input[0],&input[0,0],&input[0,0],&input[0,0],nphotons)
-
+def MessagePack(np.ndarray[DTYPEFINT_t, ndim = 1, mode = "c"] PMT, np.ndarray[DTYPEFLOAT32_t, ndim = 1, mode = "c"] Time, np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"]Wavelengths, np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"] Pos, np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"] Dir ,np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"] Pol, nphotons):
+    C_MessagePack(&PMT[0],&Time[0],&Wavelengths[0],&Pos[0,0],&Dir[0,0],&Pol[0,0],nphotons)
+    
     
 @cython.boundscheck(False)    
 def MakePhotonMessage(chromaData):
@@ -58,7 +58,6 @@ def MakePhotonMessage(chromaData):
             if f==0:
                 continue
             else:
-                #print "hit detID:",channelhit[n]," pos=",ev.photons_end.pos[n,:]," time=",ev.photons_end.t[n]
                 pass
                 # phits = encode_data(PhotonHits, [{'PMTID': int(channelhit[n]), 'Time': float(ev.photons_end.t[n]), 'KineticEnergy': (const1 / float(ev.photons_end.wavelengths[n])), 'posX': (float(ev.photons_end.pos[n,0])), 'posY': float(ev.photons_end.pos[n,1]), 'posZ' : float(ev.photons_end.pos[n,2]), 'momX' : (const2 /float((ev.photons_end.wavelengths[n])) * float(ev.photons_end.dir[n,0])), 'momY' : (const2 /float((ev.photons_end.wavelengths[n])) * float(ev.photons_end.dir[n,1])), 'momZ' : (const2 /float((ev.photons_end.wavelengths[n])) * float(ev.photons_end.dir[n,2])),'polX' : float(ev.photons_end.pol[n,0]), 'polY' : float(ev.photons_end.pol[n,1]), 'polZ' : float(ev.photons_end.pol[n,2]), 'origin' : photonHit_pb2.Photon.CHROMA}])
             #aphoton = phits.photon.add()

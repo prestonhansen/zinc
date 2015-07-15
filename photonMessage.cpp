@@ -7,7 +7,8 @@ const float const2 = (4.135667516 * (pow(10.0,-21)));
 
 void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons){
   hitPhotons::PhotonHits fPhotonData;
-  for (int i = 0; i < nphotons; i ++){
+  int i;
+  for (i = 0; i < nphotons; i ++){
     aphoton = fPhotonData.add_photon();
     aphoton->set_pmtid((*PMTArr)[i]);
     aphoton->set_time((*TimeArr[i]));
