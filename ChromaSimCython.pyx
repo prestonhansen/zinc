@@ -1,6 +1,6 @@
+
 import photonHit_pb2
 import ratchromadata_pb2
-from hitPhotons_pb import PhotonHits
 import numpy as np
 cimport numpy as np
 
@@ -17,7 +17,7 @@ import time
 
 import cython
 cimport cython
-
+import message_pack_cpp #refers to external c++ code. 
 
 DTYPEINT = np.int32
 ctypedef np.int_t DTYPEINT_t
@@ -29,13 +29,18 @@ det = uboone()
 
 sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
 
-cdef extern void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons)
+cdef extern from "photonMessage.hh":
+    void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons)
+    void shipBack()
+    void returnPhits()
 @cython.boundscheck(False)
+@cython.wraparound(False)
 def MessagePack(np.ndarray[int, ndim = 1, mode = "c"] PMT, np.ndarray[float, ndim = 1, mode = "c"] Time, np.ndarray[float, ndim = 1, mode = "c"]Wavelengths, np.ndarray[float, ndim = 2, mode = "c"] Pos, np.ndarray[float, ndim = 2, mode = "c"] Dir ,np.ndarray[float, ndim = 2, mode = "c"] Pol,int nphotons):
-    C_MessagePack(&PMT[0],&Time[0],&Wavelengths[0],&Pos[0,0],&Dir[0,0],&Pol[0,0], nphotons)
+        C_MessagePack(&PMT[0],&Time[0],&Wavelengths[0],&Pos[0,0],&Dir[0,0],&Pol[0,0], nphotons)
     
 
 @cython.boundscheck(False)
+@cython.wraparound(False)
 def MakePhotonMessage(chromaData):
     photons = GenScintPhotons(chromaData)
     events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
@@ -43,13 +48,13 @@ def MakePhotonMessage(chromaData):
     cdef float const1 = float((2*(np.pi)*(6.582*(10**-16))*(299792458.0)))
     cdef float const2 = (4.135667516 * (10**-21))
     cdef int n, f
-    cdef np.ndarray[np.int,ndim = 1] channelhit	
-    cdef np.ndarray[np.int,ndim = 1] detected_photons
+    cdef np.ndarray[np.int32_t,ndim = 1] channelhit	
+    cdef np.ndarray[unsigned int,ndim = 1] detected_photons
 
     phits = photonHit_pb2.PhotonHits()
     for ev in events:
-        detected_photons = ev.photons_end.flags[:] & <DTYPEUINT16_t>chroma.event.SURFACE_DETECT
-        channelhit = np.zeros(len(detected_photons),dtype = DTYPEINT)
+        detected_photons = ev.photons_end.flags[:] & chroma.event.SURFACE_DETECT
+        channelhit = np.zeros(len(detected_photons), dtype = np.int32)
         channelhit[:] = det.solid_id_to_channel_index[ det.solid_id[ev.photons_end.last_hit_triangles[:] ] ]
         phits.count = int(np.count_nonzero(detected_photons))
         detected_photons_count = len(detected_photons)
@@ -76,13 +81,16 @@ def MakePhotonMessage(chromaData):
             # aphoton.origin = photonHit_pb2.Photon.CHROMA 
             
             #attempt to use external c++ function:
-            MessagePack(channelhit[:],ev.photons_end.t[:],ev.photons_end.wavelengths[:],ev.photons_end.pos[:],ev.photons_end.dir[:], ev.photons_end.pol[:],detected_photons_count)
+            stime = time.clock()
+            MessagePack(channelhit,ev.photons_end.t,ev.photons_end.wavelengths,ev.photons_end.pos,ev.photons_end.dir, ev.photons_end.pol,detected_photons_count)
+            print "pack time:",(time.clock()-stime)
     etime = time.clock()
     print "TIME TO MAKE MESSAGE: ",(etime-stime)
     #return phits
     #instead of returning phits, we will try to have c++ send the proto obj.
 
 @cython.boundscheck(False)
+@cython.wraparound(False)
 def GenScintPhotons(protoString):
     stime = time.clock()
     cdef int nsphotons,stepPhotons,i,j

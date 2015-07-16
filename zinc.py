@@ -6,6 +6,7 @@ import threading
 import ratchromadata_pb2
 import photonHit_pb2
 import random
+import cProfile
 #chroma
 #import chroma.api as api
 # api.use_cuda()
@@ -136,7 +137,7 @@ def Queue(l):
         if clients:
             socks = dict(poll_both.poll())
         else:
-            socks = dict(poll_RAT.poll(3000))#timeout in ms
+            socks = dict(poll_RAT.poll())
         
         if socks.get(backend) == zmq.POLLIN:
             msg = backend.recv_multipart()
@@ -150,19 +151,19 @@ def Queue(l):
                 msg = frontend.recv_multipart()
                 serverIdentity = msg[0]
                 clientIdentity = clients.pop(0)
-                l.acquire()
-                print msg
-                l.release()
+                # l.acquire()
+                # print msg
+                # l.release()
                 #get detector config
                 requestConfig = [clientIdentity, '', 'cfg']
-                l.acquire()
-                print requestConfig
-                l.release()
-                backend.send_multipart(requestConfig)
+                # l.acquire()
+                # print requestConfig
+                # l.release()
+                backend.send_multipart(requestConfig) 
                 cfg = backend.recv_multipart()
-                l.acquire()
+                #l.acquire()
                 #print cfg
-                l.release()
+                #l.release()
                 #send detector config
                 frontend.send_multipart([serverIdentity,'',cfg[2],])
                 frontend.recv_multipart()
@@ -178,22 +179,32 @@ def Queue(l):
                     #send data
                     frontend.send_multipart([serverIdentity,'',data[2],])
                     #get processed data back
+                    stime = time.clock()
                     newMsg = frontend.recv_multipart()
+                    etime = time.clock()
+                    l.acquire()
+                    print "time to get new data",(etime-stime)
+                    l.release()
                     #l.acquire()
                    # print newMsg
                     #l.release()
                     newData = newMsg[2]
-                    l.acquire()
-                    print "queue: got new data"
-                    l.release()
+                    # l.acquire()
+                    # print "queue: got new data"
+                    # l.release()
                     #send ok signal to server
                     #frontend.send_multipart([serverIdentity,'',''])
                     #send processed data back to client
+                    stime = time.clock()
                     backend.send_multipart([clientIdentity,'',newData])
-                    backend.recv_multipart()
+                    etime = time.clock()
                     l.acquire()
-                    print 'queue: sent to RAT'
+                    print "time to send newdata",(etime-stime)
                     l.release()
+                    backend.recv_multipart()
+                    # l.acquire()
+                    # print 'queue: sent to RAT'
+                    # l.release()
         else:
             pass #(this stuff doesn't work properly yet)
             # l.acquire()
@@ -217,19 +228,24 @@ def Server(l):
     l.acquire()
     print "opened"
     l.release()
-    f = open('MESSAGESIZE','w')
     #while True:
     #send the queuer our identity.
     socket.send(b"")
     #queuer replies with optical data
     oData = socket.recv()
     socket.send(b"")
-    l.acquire()
-    print "got optical info "
-    l.release()
+    #l.acquire()
+    #print "got optical info "
+    #l.release()
     #send chroma optical data
+    stime = time.clock()
     chromaSocket.send(oData)
+    etime = time.clock()
+    l.acquire()
+    print "time to send odata",(etime-stime)
+    l.release()
     chromaSocket.recv()
+
     #simple while loop to facilitate multiple events per run. as described
     #above, need to implement a way to break the loop so that the server layers
     #dont need to be restarted to work on a new RAT client request.
@@ -237,31 +253,42 @@ def Server(l):
         # get data for chroma
         msg = socket.recv()
         mychromadata = ratchromadata_pb2.ChromaData()
+        stime = time.clock()
         mychromadata.ParseFromString(msg)
+        etime = time.clock()
         #print mychromadata, "\n"
-        #print "message size: ",mychromadata.ByteSize()
-        f.write(str(mychromadata.ByteSize())+'\n')
-
-        chromaSocket.send(msg)
         l.acquire()
-        print "Server: sent to chroma"
+        print "message size: ",mychromadata.ByteSize()
+        print "time to parse",(etime-stime)
         l.release()
+        chromaSocket.send(msg)
+       # l.acquire()
+        #print "Server: sent to chroma"
+       # l.release()
         #generate some photons
         #phits = MakePhotons(num_pmts)
         #print "making some fake photons\n"
         #print phits
         #ship em
-        #socket.send(phits.SerializeToString())    
+        #socket.send(phits.SerializeToString())
         phits = photonHit_pb2.PhotonHits()
+        stime = time.clock()
         phits = chromaSocket.recv()
+        etime = time.clock()
+        l.acquire()
+        print "time to recv phits message ",(etime-stime)
+        l.release()
         #print phits
         #print "bytesize: ",phits.ByteSize()
-        l.acquire()
-        print "Server: got new data, sending to queue"
-        l.release()
+        #l.acquire()
+        #print "Server: got new data, sending to queue"
+        #l.release()
+        stime = time.clock()
         socket.send(phits)
-
-
+        etime = time.clock()
+        l.acquire()
+        print "time to send phits to RAT",(etime-stime)
+        l.release()
 
 
 ############### END CLIENT AND SERVER LAYERS ###############

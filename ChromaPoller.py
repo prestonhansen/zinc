@@ -12,7 +12,7 @@ import numpy as np
 import ratchromadata_pb2
 import photonHit_pb2
 import cProfile
-import ChromaSimCython
+import message_pack_cpp
 context = zmq.Context().instance()
 
 backend = context.socket(zmq.REP)
@@ -156,13 +156,16 @@ def main():
         #pack hitphoton data into protobuf
         
         #currently working on having c++ linked code send proto object back to server.
-        phits = ChromaSimCython.MakePhotonMessage(chromaData)
-
+        stime = time.clock()
+        message_pack_cpp.MakePhotonMessage(chromaData)
+        print "time to pack ",(time.clock()-stime)
+        phits = message_pack_cpp.returnPhits()
+        backend.send(phits)
         """ChromaSimCython now links a native c++ file that packs message and sends to server. need to handle req-rep chain so that both the
         c++ file and this one loop through properly"""
         #print phits
         #ship it
-        backend.send(phits.SerializeToString())
+        #backend.send(phits.SerializeToString())
         print "sent data"
 if __name__ == "__main__":
     cProfile.run("main()")
