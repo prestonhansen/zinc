@@ -5,7 +5,7 @@
 const float const1 = (2.0 * 3.1415926535)*(6.582*(pow(10.0,-16)))*(299792458.0);
 const float const2 = (4.135667516 * (pow(10.0,-21)));
 
-void C_MessagePack(int* PMTArr[], float* TimeArr[], float* WaveArr[], float* PosArr[], float* DirArr[], float* PolArr[], int nphotons){
+void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons){
   hitPhotons::PhotonHits fPhotonData;
   hitPhotons::Photon* aphoton;
   int i, j, index;
@@ -18,25 +18,26 @@ void C_MessagePack(int* PMTArr[], float* TimeArr[], float* WaveArr[], float* Pos
     //set origin to chroma here.
     ////////////////////////////
     for (j = 0; j < 3; j++){
-      aphoton->set_posx((*PosArr)[index,0]);
-      aphoton->set_posy((*PosArr)[index,1]);
-      aphoton->set_posz((*PosArr)[index,2]);
-      aphoton->set_momx(const2 / (((*WaveArr)[index]) * ((*DirArr)[index,0])));
-      aphoton->set_momy(const2 / (((*WaveArr)[index]) * ((*DirArr)[index,1])));
-      aphoton->set_momz(const2 / (((*WaveArr)[index]) * ((*DirArr)[index,2])));
-      aphoton->set_polx((*PolArr)[index,0]);
-      aphoton->set_poly((*PolArr)[index,1]);
-      aphoton->set_polz((*PolArr)[index,2]);
+      aphoton->set_posx((*PosArr)[index]);
+      aphoton->set_posy((*PosArr)[index]);
+      aphoton->set_posz((*PosArr)[index]);
+      aphoton->set_momx(const2 / (((*WaveArr)[index]) * ((*DirArr)[index])));
+      aphoton->set_momy(const2 / (((*WaveArr)[index]) * ((*DirArr)[index])));
+      aphoton->set_momz(const2 / (((*WaveArr)[index]) * ((*DirArr)[index])));
+      aphoton->set_polx((*PolArr)[index]);
+      aphoton->set_poly((*PolArr)[index]);
+      aphoton->set_polz((*PolArr)[index]);
       index++;
     }
   }
+}
 
 }
 
 void shipBack(hitPhotons::PhotonHits fPhotonData){
-  zmq::context_t context = new zmq::context_t(1);
+  zmq::context_t* context = new zmq::context_t(1);
   // want to connect to the server endpoint here.
-  zmq::socket_t * client = new zmq::socket_t (zmq::context_t & context);
+  zmq::socket_t* client = new zmq::socket_t (zmq::context_t & context);
   client->connect("tcp:://localhost:5556");
   
   std::string str_msg;
