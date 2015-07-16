@@ -1,8 +1,8 @@
-from cprotobuf import encode_data
 import photonHit_pb2
 import ratchromadata_pb2
 from hitPhotons_pb import PhotonHits
 import numpy as np
+cimport numpy as np
 
 import chroma.api as api
 api.use_cuda()
@@ -12,16 +12,14 @@ import chroma.event
 
 from uboone import uboone
 
-cimport numpy as np
+
 import time
 
 import cython
 cimport cython
 
-cdef extern void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons)
 
-
-DTYPEINT = np.int
+DTYPEINT = np.int32
 ctypedef np.int_t DTYPEINT_t
 DTYPEFLOAT32 = np.float32
 ctypedef np.float32_t DTYPEFLOAT32_t
@@ -31,12 +29,13 @@ det = uboone()
 
 sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
 
+cdef extern void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons)
 @cython.boundscheck(False)
-def MessagePack(np.ndarray[DTYPEFINT_t, ndim = 1, mode = "c"] PMT, np.ndarray[DTYPEFLOAT32_t, ndim = 1, mode = "c"] Time, np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"]Wavelengths, np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"] Pos, np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"] Dir ,np.ndarray[DTYPEFLOAT32_t, ndim = 2, mode = "c"] Pol, nphotons):
-    C_MessagePack(&PMT[0],&Time[0],&Wavelengths[0],&Pos[0,0],&Dir[0,0],&Pol[0,0],nphotons)
+def MessagePack(np.ndarray[int, ndim = 1, mode = "c"] PMT, np.ndarray[float, ndim = 1, mode = "c"] Time, np.ndarray[float, ndim = 1, mode = "c"]Wavelengths, np.ndarray[float, ndim = 2, mode = "c"] Pos, np.ndarray[float, ndim = 2, mode = "c"] Dir ,np.ndarray[float, ndim = 2, mode = "c"] Pol,int nphotons):
+    C_MessagePack(&PMT[0],&Time[0],&Wavelengths[0],&Pos[0,0],&Dir[0,0],&Pol[0,0], nphotons)
     
-    
-@cython.boundscheck(False)    
+
+@cython.boundscheck(False)
 def MakePhotonMessage(chromaData):
     photons = GenScintPhotons(chromaData)
     events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
@@ -44,10 +43,10 @@ def MakePhotonMessage(chromaData):
     cdef float const1 = float((2*(np.pi)*(6.582*(10**-16))*(299792458.0)))
     cdef float const2 = (4.135667516 * (10**-21))
     cdef int n, f
-    cdef np.ndarray[DTYPEINT_t,ndim = 1] channelhit	
-    cdef np.ndarray[unsigned int,ndim = 1] detected_photons
+    cdef np.ndarray[np.int,ndim = 1] channelhit	
+    cdef np.ndarray[np.int,ndim = 1] detected_photons
 
-    phits = PhotonHits()
+    phits = photonHit_pb2.PhotonHits()
     for ev in events:
         detected_photons = ev.photons_end.flags[:] & <DTYPEUINT16_t>chroma.event.SURFACE_DETECT
         channelhit = np.zeros(len(detected_photons),dtype = DTYPEINT)
@@ -59,16 +58,15 @@ def MakePhotonMessage(chromaData):
                 continue
             else:
                 pass
-                # phits = encode_data(PhotonHits, [{'PMTID': int(channelhit[n]), 'Time': float(ev.photons_end.t[n]), 'KineticEnergy': (const1 / float(ev.photons_end.wavelengths[n])), 'posX': (float(ev.photons_end.pos[n,0])), 'posY': float(ev.photons_end.pos[n,1]), 'posZ' : float(ev.photons_end.pos[n,2]), 'momX' : (const2 /float((ev.photons_end.wavelengths[n])) * float(ev.photons_end.dir[n,0])), 'momY' : (const2 /float((ev.photons_end.wavelengths[n])) * float(ev.photons_end.dir[n,1])), 'momZ' : (const2 /float((ev.photons_end.wavelengths[n])) * float(ev.photons_end.dir[n,2])),'polX' : float(ev.photons_end.pol[n,0]), 'polY' : float(ev.photons_end.pol[n,1]), 'polZ' : float(ev.photons_end.pol[n,2]), 'origin' : photonHit_pb2.Photon.CHROMA}])
-            #aphoton = phits.photon.add()
-            #aphoton.PMTID = int(channelhit[n])
-            #aphoton.Time = float(ev.photons_end.t[n])
-            #aphoton.KineticEnergy = (const1/float((ev.photons_end.wavelengths[n])))
-            #aphoton.posX = float(ev.photons_end.pos[n,0])
-            #aphoton.posY = float(ev.photons_end.pos[n,1])
-            #aphoton.posZ = float(ev.photons_end.pos[n,2])
-            # px = |p|*cos(theta) = (h / lambda)*(<u,v> / |u||v|) = (h / lambda)*(u1 / |u|), etc.
-            #turns out we don't need to to this... px = |p|*phat = (h / lambda) * (dir[n,0]...etc.
+            # aphoton = phits.photon.add()
+            # aphoton.PMTID = int(channelhit[n])
+            # aphoton.Time = float(ev.photons_end.t[n])
+            # aphoton.KineticEnergy = (const1/float((ev.photons_end.wavelengths[n])))
+            # aphoton.posX = float(ev.photons_end.pos[n,0])
+            # aphoton.posY = float(ev.photons_end.pos[n,1])
+            # aphoton.posZ = float(ev.photons_end.pos[n,2])
+            # #px = |p|*cos(theta) = (h / lambda)*(<u,v> / |u||v|) = (h / lambda)*(u1 / |u|), etc.
+            # #turns out we don't need to to this... px = |p|*phat = (h / lambda) * (dir[n,0]...etc.
             # aphoton.momX = (const2 /float((ev.photons_end.wavelengths[n]))) * float((ev.photons_end.dir[n,0]))
             # aphoton.momY = (const2 /float((ev.photons_end.wavelengths[n]))) * float((ev.photons_end.dir[n,1]))
             # aphoton.momZ = (const2 /float((ev.photons_end.wavelengths[n]))) * float((ev.photons_end.dir[n,2]))
@@ -78,7 +76,7 @@ def MakePhotonMessage(chromaData):
             # aphoton.origin = photonHit_pb2.Photon.CHROMA 
             
             #attempt to use external c++ function:
-            C_MessagePack(channelhit,ev.photons_end.t,ev.photons_end.wavelengths,ev.photons_end.pos,ev.photons_end.dir, ev.photons_end.pol,phits,detected_photons_count)
+            MessagePack(channelhit[:],ev.photons_end.t[:],ev.photons_end.wavelengths[:],ev.photons_end.pos[:],ev.photons_end.dir[:], ev.photons_end.pol[:],detected_photons_count)
     etime = time.clock()
     print "TIME TO MAKE MESSAGE: ",(etime-stime)
     #return phits

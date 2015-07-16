@@ -1,36 +1,40 @@
 #include "photonHit.pb.h"
 #include <cmath>
-#include "zmq.hpp"
+#include <zmq.hpp>
 
 const float const1 = (2.0 * 3.1415926535)*(6.582*(pow(10.0,-16)))*(299792458.0);
 const float const2 = (4.135667516 * (pow(10.0,-21)));
 
-void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons){
+void C_MessagePack(int* PMTArr[], float* TimeArr[], float* WaveArr[], float* PosArr[], float* DirArr[], float* PolArr[], int nphotons){
   hitPhotons::PhotonHits fPhotonData;
-  int i;
-  for (i = 0; i < nphotons; i ++){
+  hitPhotons::Photon* aphoton;
+  int i, j, index;
+  for (i = 0; i < nphotons; i++){
     aphoton = fPhotonData.add_photon();
-    aphoton->set_pmtid((*PMTArr)[i]);
-    aphoton->set_time((*TimeArr[i]));
-    aphoton->set_kineticenergy(const1 / ((*WaveArr)[i]));
-    aphoton->set_posx((*PosArr)[i,0]);
-    aphoton->set_posy((*PosArr)[i,1]);
-    aphoton->set_posz((*PosArr)[i,2]);
-    aphoton->set_momx(const2 / (((*WaveArr)[i]) * (*DirArr[i,0])));
-    aphoton->set_momy(const2 / (((*WaveArr)[i]) * (*DirArr[i,1])));
-    aphoton->set_momz(const2 / (((*WaveArr)[i]) * (*DirArr[i,2])));
-    aphoton->set_polx((*PolArr)[i,0]);
-    aphoton->set_poly((*PolArr)[i,1]);
-    aphoton->set_polz((*PolArr)[i,2]);
+    aphoton->set_pmtid((*PMTArr)[index]);
+    aphoton->set_time((*TimeArr[index]));
+    aphoton->set_kineticenergy(const1 / ((*WaveArr)[index]));
     ////////////////////////////
     //set origin to chroma here.
     ////////////////////////////
+    for (j = 0; j < 3; j++){
+      aphoton->set_posx((*PosArr)[index,0]);
+      aphoton->set_posy((*PosArr)[index,1]);
+      aphoton->set_posz((*PosArr)[index,2]);
+      aphoton->set_momx(const2 / (((*WaveArr)[index]) * ((*DirArr)[index,0])));
+      aphoton->set_momy(const2 / (((*WaveArr)[index]) * ((*DirArr)[index,1])));
+      aphoton->set_momz(const2 / (((*WaveArr)[index]) * ((*DirArr)[index,2])));
+      aphoton->set_polx((*PolArr)[index,0]);
+      aphoton->set_poly((*PolArr)[index,1]);
+      aphoton->set_polz((*PolArr)[index,2]);
+      index++;
+    }
   }
 
 }
 
 void shipBack(hitPhotons::PhotonHits fPhotonData){
-  context = new zmq::context_t(1);
+  zmq::context_t context = new zmq::context_t(1);
   // want to connect to the server endpoint here.
   zmq::socket_t * client = new zmq::socket_t (zmq::context_t & context);
   client->connect("tcp:://localhost:5556");

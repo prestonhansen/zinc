@@ -156,10 +156,13 @@ def main():
         #pack hitphoton data into protobuf
         
         #currently working on having c++ linked code send proto object back to server.
-        ChromaSimCython.MakePhotonMessage(chromaData)
+        phits = ChromaSimCython.MakePhotonMessage(chromaData)
+
+        """ChromaSimCython now links a native c++ file that packs message and sends to server. need to handle req-rep chain so that both the
+        c++ file and this one loop through properly"""
         #print phits
         #ship it
-        #backend.send(phits.SerializeToString())
-        #print "sent data"
+        backend.send(phits.SerializeToString())
+        print "sent data"
 if __name__ == "__main__":
     cProfile.run("main()")
