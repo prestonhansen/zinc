@@ -3,6 +3,7 @@
 #include <zmq.hpp>
 #include <string>
 
+
 void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons);
 //  Sends string as 0MQ string
 bool s_send (zmq::socket_t & socket, const std::string & string);
@@ -13,5 +14,8 @@ bool s_send (zmq::socket_t & socket, const std::string & string);
 char * s_recv (void *socket);
 
 void shipBack();
-
+void killSocket();
 std::string returnPhits();
+
+
+

@@ -16,11 +16,9 @@ import message_pack_cpp
 context = zmq.Context().instance()
 
 backend = context.socket(zmq.REP)
-
 backport = '5556' #talks to REQ frontend of server (on backend)
 
 backend.connect( "tcp://localhost:%s"%(backport) )
-
 #poll_Server = zmq.Poller()
 #poll_Server.register(backend, zmq.POLLIN)
 #can set polling options to kill and restart on user input or
@@ -108,64 +106,64 @@ def main():
     backend.send(b'')
     for x in xrange(5):
         msg = backend.recv()#_multipart()
+        backend.send(b'')
         chromaData = ratchromadata_pb2.ChromaData()
         chromaData.ParseFromString(msg)
         #print chromaData
         print "got chroma data"
         #photons = ChromaSimCython.GenScintPhotons(chromaData)
         #print "finished photon gen"
-        """for cherenkov photons"""
-        #if there are cherenkov photons, simulate and add them to the message
-        #before it's sent back.
-
-        # nphotons = sum(1 for p in enumerate(chromaData.stepdata))
-        # if nphotons > 0:
-        #     print "NUMPHOTONS: ",nphotons
-        #     dir = np.zeros((nphotons,3), 
-        #                    dtype = np.float32)
-        #     for i,cData in enumerate(chromaData.cherenkovdata):
-        #         dir[i,0] = cData.dx()
-        #         dir[i,1] = cData.dy()
-        #         dir[i,2] = cData.dz()
-        #         pol = np.zeros_like(dir)
-        #         for i,cData in (chromaData.cherenkovdata):
-        #             pol[i,0] = cData.px()
-        #             pol[i,1] = cData.py()
-        #             pol[i,2] = cData.pz()
-
-        #         pos = np.zeros_like(dir)
-        #         for i,cData in (chromaData.cherenkovdata):
-        #             pos[i,0] = cData.x()
-        #             pos[i,1] = cData.y()
-        #             pos[i,2] = cData.z()
-
-        #         t = np.zeros((nphotons), 
-        #                      dtype=np.float32)
-        #         for i,cData in (chromaData.cherenkovdata):
-        #             t[i] = cData.t()
-
-        #         wavelengths = np.zeros_like(t)
-        #         for i,cData in (chromaData.cherenkovdata):
-        #             wavelengths[i] = cData.wavelengths()
-
-        #         #ship to GPU, do some stuff, send data back
-        #         photons = Photons(pos=pos, dir=dir, pol=pol, t=t,
-        #                   wavelengths = wavelengths)
-
-        #events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
-        #pack hitphoton data into protobuf
         
         #currently working on having c++ linked code send proto object back to server.
         stime = time.clock()
         message_pack_cpp.MakePhotonMessage(chromaData)
-        print "time to pack ",(time.clock()-stime)
-        phits = message_pack_cpp.returnPhits()
-        backend.send(phits)
+        print "time for all chroma actions ",(time.clock()-stime)
+        message_pack_cpp.sendPhotons()
+        time.sleep(.1)
+        message_pack_cpp.killCPPSocket()
         """ChromaSimCython now links a native c++ file that packs message and sends to server. need to handle req-rep chain so that both the
         c++ file and this one loop through properly"""
-        #print phits
-        #ship it
-        #backend.send(phits.SerializeToString())
         print "sent data"
 if __name__ == "__main__":
     cProfile.run("main()")
+
+"""for cherenkov photons"""
+#if there are cherenkov photons, simulate and add them to the message
+#before it's sent back.
+
+    # nphotons = sum(1 for p in enumerate(chromaData.stepdata))
+    # if nphotons > 0:
+    #     print "NUMPHOTONS: ",nphotons
+    #     dir = np.zeros((nphotons,3), 
+    #                    dtype = np.float32)
+    #     for i,cData in enumerate(chromaData.cherenkovdata):
+    #         dir[i,0] = cData.dx()
+    #         dir[i,1] = cData.dy()
+    #         dir[i,2] = cData.dz()
+    #         pol = np.zeros_like(dir)
+    #         for i,cData in (chromaData.cherenkovdata):
+    #             pol[i,0] = cData.px()
+    #             pol[i,1] = cData.py()
+    #             pol[i,2] = cData.pz()
+
+    #         pos = np.zeros_like(dir)
+    #         for i,cData in (chromaData.cherenkovdata):
+    #             pos[i,0] = cData.x()
+    #             pos[i,1] = cData.y()
+    #             pos[i,2] = cData.z()
+
+    #         t = np.zeros((nphotons), 
+    #                      dtype=np.float32)
+    #         for i,cData in (chromaData.cherenkovdata):
+    #             t[i] = cData.t()
+
+    #         wavelengths = np.zeros_like(t)
+    #         for i,cData in (chromaData.cherenkovdata):
+    #             wavelengths[i] = cData.wavelengths()
+
+    #         #ship to GPU, do some stuff, send data back
+    #         photons = Photons(pos=pos, dir=dir, pol=pol, t=t,
+    #                   wavelengths = wavelengths)
+
+    #events = sim.simulate(photons, keep_photons_end=True, max_steps=2000)
+    #pack hitphoton data into protobuf

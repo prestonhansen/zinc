@@ -1,4 +1,5 @@
-
+cimport cython
+cimport cython
 import photonHit_pb2
 import ratchromadata_pb2
 import numpy as np
@@ -12,12 +13,9 @@ import chroma.event
 
 from uboone import uboone
 
-
 import time
-
-import cython
-cimport cython
 import message_pack_cpp #refers to external c++ code. 
+
 
 DTYPEINT = np.int32
 ctypedef np.int_t DTYPEINT_t
@@ -25,20 +23,25 @@ DTYPEFLOAT32 = np.float32
 ctypedef np.float32_t DTYPEFLOAT32_t
 DTYPEUINT16 = np.uint16
 ctypedef np.uint16_t DTYPEUINT16_t
+
 det = uboone()
 
-sim = Simulation(det,geant4_processes=0,nthreads_per_block = 1, max_blocks = 1024)
+sim = Simulation(det,geant4_processes=0,nthreads_per_block = 64, max_blocks = 1024)
 
 cdef extern from "photonMessage.hh":
-    void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons)
-    void shipBack()
-    void returnPhits()
+     void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons)
+     void shipBack()
+     str returnPhits()
+     void killSocket()
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def MessagePack(np.ndarray[int, ndim = 1, mode = "c"] PMT, np.ndarray[float, ndim = 1, mode = "c"] Time, np.ndarray[float, ndim = 1, mode = "c"]Wavelengths, np.ndarray[float, ndim = 2, mode = "c"] Pos, np.ndarray[float, ndim = 2, mode = "c"] Dir ,np.ndarray[float, ndim = 2, mode = "c"] Pol,int nphotons):
         C_MessagePack(&PMT[0],&Time[0],&Wavelengths[0],&Pos[0,0],&Dir[0,0],&Pol[0,0], nphotons)
-    
-
+def sendPhotons():
+        shipBack()
+def killCPPSocket():
+        killSocket()
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def MakePhotonMessage(chromaData):
@@ -50,19 +53,19 @@ def MakePhotonMessage(chromaData):
     cdef int n, f
     cdef np.ndarray[np.int32_t,ndim = 1] channelhit	
     cdef np.ndarray[unsigned int,ndim = 1] detected_photons
-
     phits = photonHit_pb2.PhotonHits()
     for ev in events:
+        print "!!!!!!!!!!!!!!!EVENT!!!!!!!!!!!!!!"
         detected_photons = ev.photons_end.flags[:] & chroma.event.SURFACE_DETECT
         channelhit = np.zeros(len(detected_photons), dtype = np.int32)
         channelhit[:] = det.solid_id_to_channel_index[ det.solid_id[ev.photons_end.last_hit_triangles[:] ] ]
         phits.count = int(np.count_nonzero(detected_photons))
         detected_photons_count = len(detected_photons)
-        for n,f in enumerate(detected_photons):
-            if f==0:
-                continue
-            else:
-                pass
+        # for n,f in enumerate(detected_photons):
+        #     if f==0:
+        #         continue
+        #     else:
+        #         pass
             # aphoton = phits.photon.add()
             # aphoton.PMTID = int(channelhit[n])
             # aphoton.Time = float(ev.photons_end.t[n])
@@ -81,9 +84,9 @@ def MakePhotonMessage(chromaData):
             # aphoton.origin = photonHit_pb2.Photon.CHROMA 
             
             #attempt to use external c++ function:
-            stime = time.clock()
-            MessagePack(channelhit,ev.photons_end.t,ev.photons_end.wavelengths,ev.photons_end.pos,ev.photons_end.dir, ev.photons_end.pol,detected_photons_count)
-            print "pack time:",(time.clock()-stime)
+        stime = time.clock()
+        MessagePack(channelhit,ev.photons_end.t,ev.photons_end.wavelengths,ev.photons_end.pos,ev.photons_end.dir, ev.photons_end.pol,detected_photons_count)
+        print "pack time:",(time.clock()-stime)
     etime = time.clock()
     print "TIME TO MAKE MESSAGE: ",(etime-stime)
     #return phits
