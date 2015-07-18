@@ -26,7 +26,7 @@ ctypedef np.uint16_t DTYPEUINT16_t
 
 det = uboone()
 
-sim = Simulation(det,geant4_processes=0,nthreads_per_block = 64, max_blocks = 1024)
+sim = Simulation(det,geant4_processes=0,nthreads_per_block = 128, max_blocks = 1024)
 
 cdef extern from "photonMessage.hh":
      void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons)

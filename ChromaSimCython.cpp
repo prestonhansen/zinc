@@ -1507,7 +1507,7 @@ static PyObject *__pyx_int_0;
 static PyObject *__pyx_int_1;
 static PyObject *__pyx_int_2;
 static PyObject *__pyx_int_3;
-static PyObject *__pyx_int_64;
+static PyObject *__pyx_int_128;
 static PyObject *__pyx_int_1024;
 static PyObject *__pyx_int_2000;
 static PyObject *__pyx_slice_;
@@ -6682,7 +6682,7 @@ static int __Pyx_InitGlobals(void) {
   __pyx_int_1 = PyInt_FromLong(1); if (unlikely(!__pyx_int_1)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_int_2 = PyInt_FromLong(2); if (unlikely(!__pyx_int_2)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_int_3 = PyInt_FromLong(3); if (unlikely(!__pyx_int_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  __pyx_int_64 = PyInt_FromLong(64); if (unlikely(!__pyx_int_64)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  __pyx_int_128 = PyInt_FromLong(128); if (unlikely(!__pyx_int_128)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_int_1024 = PyInt_FromLong(1024); if (unlikely(!__pyx_int_1024)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_int_2000 = PyInt_FromLong(2000); if (unlikely(!__pyx_int_2000)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 1; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   return 0;
@@ -7034,7 +7034,7 @@ PyMODINIT_FUNC PyInit_message_pack_cpp(void)
  * 
  * det = uboone()             # <<<<<<<<<<<<<<
  * 
- * sim = Simulation(det,geant4_processes=0,nthreads_per_block = 64, max_blocks = 1024)
+ * sim = Simulation(det,geant4_processes=0,nthreads_per_block = 128, max_blocks = 1024)
  */
   __pyx_t_3 = __Pyx_GetModuleGlobalName(__pyx_n_s_uboone); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 27; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
@@ -7062,7 +7062,7 @@ PyMODINIT_FUNC PyInit_message_pack_cpp(void)
   /* "ChromaSimCython.pyx":29
  * det = uboone()
  * 
- * sim = Simulation(det,geant4_processes=0,nthreads_per_block = 64, max_blocks = 1024)             # <<<<<<<<<<<<<<
+ * sim = Simulation(det,geant4_processes=0,nthreads_per_block = 128, max_blocks = 1024)             # <<<<<<<<<<<<<<
  * 
  * cdef extern from "photonMessage.hh":
  */
@@ -7078,7 +7078,7 @@ PyMODINIT_FUNC PyInit_message_pack_cpp(void)
   __pyx_t_3 = PyDict_New(); if (unlikely(!__pyx_t_3)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_3);
   if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_geant4_processes, __pyx_int_0) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_nthreads_per_block, __pyx_int_64) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_nthreads_per_block, __pyx_int_128) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_max_blocks, __pyx_int_1024) < 0) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_1, __pyx_t_3); if (unlikely(!__pyx_t_4)) {__pyx_filename = __pyx_f[0]; __pyx_lineno = 29; __pyx_clineno = __LINE__; goto __pyx_L1_error;}
   __Pyx_GOTREF(__pyx_t_4);
