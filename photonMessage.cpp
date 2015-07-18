@@ -3,7 +3,7 @@
 #include <string>
 #include <iostream>
 
-namespace Message_Pack{
+namespace Message_Packing{
   const float const1 = (2.0 * 3.1415926535)*(6.582*(pow(10.0,-16)))*(299792458.0);
   const float const2 = (4.135667516 * (pow(10.0,-21)));
   hitPhotons::PhotonHits fPhotonData;

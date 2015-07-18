@@ -28,7 +28,7 @@ det = uboone()
 
 sim = Simulation(det,geant4_processes=0,nthreads_per_block = 128, max_blocks = 1024)
 
-cdef extern from "photonMessage.hh" namespace "Message_Pack":
+cdef extern from "photonMessage.hh" namespace "Message_Packing":
      void C_MessagePack(int* PMTArr, float* TimeArr, float* WaveArr, float* PosArr, float* DirArr, float* PolArr, int nphotons)
      void shipBack()
      str returnPhits()
