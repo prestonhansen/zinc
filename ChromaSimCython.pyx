@@ -134,11 +134,11 @@ def GenScintPhotons(protoString):
         for j in xrange(stepPhotons, (stepPhotons+sData.nphotons)):
                 if rArr[j] < 0.6: 
                         #prompt
-                        t[j] = (np.random.exponential(1/6.0) + (sData.step_end_t-sData.step_start_t)) 
+                        t[j] = (np.random.exponential(6.0) + (sData.step_end_t-sData.step_start_t))
+                        #note that numpy documentation is wrong about how scale parameter is used (need beta instead of 1/beta)
                 else:
                         #late
-                        t[j] = (np.random.exponential(1/1500.0) + (sData.step_end_t-sData.step_start_t))
-                        
+                        t[j] = (np.random.exponential(1500.0) + (sData.step_end_t-sData.step_start_t))
         stepPhotons += sData.nphotons
     etime = time.clock()
     print "TIME TO GEN PHOTONS: ",(etime-stime)
