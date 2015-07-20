@@ -104,7 +104,7 @@ def main():
     optics = backend.recv()
     #print optics
     backend.send(b'')
-    for x in xrange(5):
+    while True:
         msg = backend.recv()#_multipart()
         backend.send(b'')
         chromaData = ratchromadata_pb2.ChromaData()

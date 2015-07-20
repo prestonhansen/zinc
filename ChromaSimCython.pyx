@@ -9,6 +9,7 @@ import chroma.api as api
 api.use_cuda()
 from chroma.sim import Simulation
 from chroma.event import Photons
+from chroma.gpu.photon_fromstep import GPUPhotonFromSteps
 import chroma.event
 
 from uboone import uboone
@@ -97,23 +98,26 @@ def MakePhotonMessage(chromaData):
 def GenScintPhotons(protoString):
     stime = time.clock()
     cdef int nsphotons,stepPhotons,i,j
-    cdef np.ndarray[DTYPEFLOAT32_t,ndim = 2] pos, pol
-    cdef np.ndarray[DTYPEFLOAT32_t,ndim = 1] wavelengths, t
+    cdef np.ndarray[DTYPEFLOAT32_t,ndim = 2] pos, pol, dir
+    cdef np.ndarray[DTYPEFLOAT32_t,ndim = 1] wavelengths, t, dphi, dcos, phi, rArr
     nsphotons = 0
     for i,sData in enumerate(protoString.stepdata):
         nsphotons += sData.nphotons
     print "NSPHOTONS: ",nsphotons
+
+    """THIS BLOCK USES CPU PHOTON GEN"""
     pos = np.zeros((nsphotons,3),dtype=np.float32)
     pol = np.zeros_like(pos)
     t = np.zeros(nsphotons, dtype=np.float32)
     wavelengths = np.empty(nsphotons, np.float32)
     wavelengths.fill(128.0)
-    dphi = np.random.uniform(0,2.0*np.pi, nsphotons)
-    dcos = np.random.uniform(-1.0, 1.0, nsphotons)
+    dphi = np.random.uniform(0,2.0*np.pi, nsphotons).astype(np.float32)
+    dcos = np.random.uniform(-1.0, 1.0, nsphotons).astype(np.float32)
     phi = np.random.uniform(0,2.0*np.pi, nsphotons).astype(np.float32)
     dir = np.array( zip( np.sqrt(1-dcos[:]*dcos[:])*np.cos(dphi[:]), np.sqrt(1-dcos[:]*dcos[:])*np.sin(dphi[:]), dcos[:] ), dtype=np.float32 )
     pol[:,0] = np.cos(phi)
     pol[:,1] = np.sin(phi)
+    rArr = np.random.uniform(0,1.0, nsphotons).astype(np.float32) #random array to sample probability of prompt or late
     stepPhotons = 0
     for i,sData in enumerate(protoString.stepdata):
         #instead of appending to array every loop, the full size (nsphotons x 3) is allocated to begin, then 
@@ -128,11 +132,42 @@ def GenScintPhotons(protoString):
         #     pol[j,1] = np.random.uniform(0,((1/3.0)**.5))
         #     pol[j,2] = ((1 - pol[j,0]**2 - pol[j,1]**2)**.5)
         for j in xrange(stepPhotons, (stepPhotons+sData.nphotons)):
-            t[j] = (np.random.exponential(1/45.0) + (sData.step_end_t-sData.step_start_t))
+                if rArr[j] < 0.6: 
+                        #prompt
+                        t[j] = (np.random.exponential(1/6.0) + (sData.step_end_t-sData.step_start_t)) 
+                else:
+                        #late
+                        t[j] = (np.random.exponential(1/1500.0) + (sData.step_end_t-sData.step_start_t))
+                        
         stepPhotons += sData.nphotons
     etime = time.clock()
     print "TIME TO GEN PHOTONS: ",(etime-stime)
     return Photons(pos = pos, pol = pol, t = t, dir = dir, wavelengths = wavelengths)
+
+    """THIS BLOCK USES GPU PHOTON GEN"""
+    # cdef np.ndarray[DTYPEFLOAT32_t,ndim = 2] step_data
+    # step_data = np.zeros( (len(protoString.stepdata), 10 ), dtype=np.float32 )
+    # stepPhotons = 0
+    # for i,sData in enumerate(protoString.stepdata):
+    #     #instead of appending to array every loop, the full size (nsphotons x 3) is allocated to begin, then 
+    #     #values are filled properly by incrementing stepPhotons.
+    #     step_data[i,0] = sData.step_start_x
+    #     step_data[i,1] = sData.step_start_y
+    #     step_data[i,2] = sData.step_start_z
+    #     step_data[i,3] = sData.step_end_x
+    #     step_data[i,4] = sData.step_end_y
+    #     step_data[i,5] = sData.step_end_z
+    #     step_data[i,6] = sData.nphotons
+    #     step_data[i,7] = 0.6
+    #     step_data[i,8] = 6.0
+    #     step_data[i,9] = 1500.0
+
+    # step_photons = GPUPhotonFromSteps( step_data )
+
+    # photons = step_photons.get()
+    # etime = time.time()
+    # print "TIME TO GEN PHOTONS: ",(etime-stime)
+    # return photons
 
 
 
