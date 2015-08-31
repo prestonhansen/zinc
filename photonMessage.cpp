@@ -16,7 +16,7 @@ namespace Message_Packing{
     j_index = 0;
     std::cout << "started message pack\n";
     for (i = 0; i < nphotons; i++){
-      if (PMTArr[i_index] >=0){
+      if (PMTArr[i_index] >=0){ //We used a bitwise AND for hits, so anything that is zero is not a hit
         aphoton = fPhotonData.add_photon();
         aphoton->set_pmtid(PMTArr[i_index]);
         aphoton->set_time(TimeArr[i_index]);
