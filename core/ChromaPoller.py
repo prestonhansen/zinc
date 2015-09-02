@@ -113,18 +113,16 @@ def main():
         print "got chroma data"
         #photons = ChromaSimCython.GenScintPhotons(chromaData)
         #print "finished photon gen"
-
-        #here we use the message_pack c++ implementation interfaced through cython.
+        
+        #currently working on having c++ linked code send proto object back to server.
         stime = time.clock()
         message_pack_cpp.MakePhotonMessage(chromaData)
         print "time for all chroma actions ",(time.clock()-stime)
         message_pack_cpp.sendPhotons()
         time.sleep(.1)
         message_pack_cpp.killCPPSocket()
-
         """ChromaSimCython now links a native c++ file that packs message and sends to server. need to handle req-rep chain so that both the
         c++ file and this one loop through properly"""
-
         print "sent data"
 if __name__ == "__main__":
     cProfile.run("main()")
