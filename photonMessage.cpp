@@ -34,15 +34,15 @@ namespace Message_Packing{
         aphoton->set_poly(PolArr[j_index + 1]);
         aphoton->set_polz(PolArr[j_index + 2]);
       
-        j_index+=3;
-        i_index++;
+        j_index+=3; // numpy arrays are passed in as 2D contiguous, so only one index is used.
+        i_index++;  // j_index and i_index are used as helpful representations within the single index.
       }
       else{
         i_index++;
         j_index+=3;
       }
     }
-    //std::cout << fPhotonData.DebugString();
+    //std::cout << fPhotonData.DebugString(); //can use this to view the proto message
     std::cout <<"finished\n";
   }
   
