@@ -1,5 +1,6 @@
 # zinc: a ZMQ Interface for Chroma
-
+##09/02/15##
+Reorganized the repo in preparation for continued development for the Fall 2015 semester. No functionality has changed, and I have postponed development of a flatbuffers implementation for the time being.
 ##07/07/15##
 Renamed the repo to zinc, and condensed all functionality into zinc.py. as of right now zinc.py specifically interfaces with the RAT/Chroma setup that I'm working with, but eventually it will be written generally such that anyone cloning the repo can easily configure it for their project.
 ##06/24/15##
