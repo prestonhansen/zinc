@@ -18,8 +18,8 @@ implemented. At some point, the networking layers will become flexible in regard
 Further, there will be reliability features built into the networking layers that allow clients/servers to 
 disconnect or die without breaking everything else. 
 
-
----------------#USAGE#---------------
+#USAGE#
 
 UPDATE 07/07/15: simply run zinc.py, a rat macro, and ChromaPoller.py in your chroma environment and magic will happen.
-UPDATE 09/02/15: as of right now none of the directories are implemented in a clean way. Once the proto file has been built, the cython library files must be built by running setup.py (currently configured for nudot, will need modification for a different setup), and zinc should be run from the directory that the chroma environment is in.
+
+UPDATE 09/02/15: as of right now none of the directories are implemented in a clean way. Once the proto file has been built, the cython library files must be built by running setup.py (currently configured for nudot, will need modification for a different setup), and ChromaPoller should be run from the directory that the chroma environment is in.
